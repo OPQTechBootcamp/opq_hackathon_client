@@ -77,7 +77,7 @@ const AdminDashboard = () => {
     };
 
     const navigateToTeams = () => {
-        navigate('/admin/user-teams');
+        navigate('/user-teams');
     };
 
     const navigateToScores = () => {
@@ -101,12 +101,12 @@ const AdminDashboard = () => {
         {
             title: 'Rounds',
             subtitle: 'Manage competition rounds',
-            icon: SettingsIcon, // Using SettingsIcon as a relevant visual
+            icon: SettingsIcon,
             onClick: navigateToRounds,
         },
         {
-            title: 'Teams',
-            subtitle: 'View and manage teams',
+            title: 'Users and Teams',
+            subtitle: 'View teams and users',
             icon: GroupsIcon,
             onClick: navigateToTeams,
         },

@@ -154,10 +154,10 @@ const Navbar = () => {
                 </>
             ) : (
                 <>
-                    <MenuItem onClick={() => { handleMobileMenuClose(); navigate('/login'); }}>
+                    {/* <MenuItem onClick={() => { handleMobileMenuClose(); navigate('/login'); }}>
                         <LoginIcon sx={{ mr: 1, fontSize: 20 }} />
                         Admin Login
-                    </MenuItem>
+                    </MenuItem> */}
                     <MenuItem onClick={() => { handleMobileMenuClose(); navigate('/team/login'); }}>
                         <LoginIcon sx={{ mr: 1, fontSize: 20 }} />
                         Team Login
@@ -369,7 +369,7 @@ const Navbar = () => {
                             ) : (
                                 /* No one is logged in */
                                 <>
-                                    <Button 
+                                    {/* <Button 
                                         color="primary"
                                         variant="text"
                                         startIcon={<PersonIcon />}
@@ -381,7 +381,7 @@ const Navbar = () => {
                                         }}
                                     >
                                         Admin Login
-                                    </Button>
+                                    </Button> */}
                                     <Button 
                                         color="secondary"
                                         variant="text"

@@ -76,9 +76,9 @@ const App = () => {
             }
           />{" "}
           <Route
-            path="/admin/user-teams"
+            path="/user-teams"
             element={
-              <ProtectedRoute roles={["admin"]}>
+              <ProtectedRoute roles={["admin", "coordinator"]}>
                 <AdminUsersScreen />
               </ProtectedRoute>
             }

@@ -14,6 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import SecurityIcon from '@mui/icons-material/Security';
 import SegmentIcon from '@mui/icons-material/Segment'; 
+import GroupsIcon from '@mui/icons-material/Groups';
 
 // Styled Components for enhanced UI
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -72,7 +73,9 @@ const CoordinatorDashboard = () => {
     const navigateToSection = () => {
         navigate('/coordinator/section-management');
     };
-
+    const navigateToTeams = () => {
+        navigate('/user-teams');
+    };
 
     const cardData = [
         {
@@ -81,11 +84,17 @@ const CoordinatorDashboard = () => {
             icon: SecurityIcon,
             onClick: navigateToJudges,
         },
+        // {
+        //     title: 'Section',
+        //     subtitle: 'Manage Team - Section assignment',
+        //     icon: SegmentIcon,
+        //     onClick: navigateToSection,
+        // },
         {
-            title: 'Section',
-            subtitle: 'Manage Team - Section assignment',
-            icon: SegmentIcon,
-            onClick: navigateToSection,
+            title: 'Users and Teams',
+            subtitle: 'View teams and users',
+            icon: GroupsIcon,
+            onClick: navigateToTeams,
         },
 
     ];

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     Container, Box, Typography, TextField, Button, Alert, IconButton, Grid, Link,
-    FormHelperText
+    FormHelperText, MenuItem, FormControl, InputLabel, Select
 } from '@mui/material';
 import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
@@ -80,14 +80,67 @@ const TeamRegisterPage = () => {
         phone_number: '',
         alternate_phone: '',
         password: '',
-        team_members: ['']
+        confirmPassword: '', // Added confirm password field
+        team_members: [''],
+        section: '', 
+        section_number: '' 
     });
     const [success, setSuccess] = useState(null);
     const [error, setError] = useState(null);
-    const loading = useSelector((state) => state.team.loading); // Assuming loading state in teamSlice
+    const [validationErrors, setValidationErrors] = useState({
+        password: '',
+        confirmPassword: ''
+    });
+    const loading = useSelector((state) => state.team.loading); 
+    const sectionOptions = Array.from({ length: 8 }, (_, i) => String.fromCharCode(65 + i));
+    const sectionNumberOptions = Array.from({ length: 30 }, (_, i) => i + 1);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setForm({ ...form, [name]: value });
+        
+        // Validate password
+        if (name === 'password') {
+            if (value.length < 6) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    password: 'Password must be at least 6 characters long'
+                }));
+            } else {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    password: ''
+                }));
+            }
+            
+            // Check if passwords match when password is changed
+            if (form.confirmPassword && value !== form.confirmPassword) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    confirmPassword: 'Passwords do not match'
+                }));
+            } else if (form.confirmPassword) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    confirmPassword: ''
+                }));
+            }
+        }
+        
+        // Validate confirm password
+        if (name === 'confirmPassword') {
+            if (value !== form.password) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    confirmPassword: 'Passwords do not match'
+                }));
+            } else {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    confirmPassword: ''
+                }));
+            }
+        }
     };
 
     const handleMemberChange = (index, value) => {
@@ -107,11 +160,26 @@ const TeamRegisterPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Validate form before submission
+        if (form.password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return;
+        }
+        
+        if (form.password !== form.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
 
         const membersObject = form.team_members.reduce((acc, name, i) => {
             acc[`member${i + 1}`] = name;
             return acc;
         }, {});
+
+        // Format section_team_id as "SECTION_NUMBER" (e.g., "A_1")
+        const section_team_id = form.section && form.section_number ? 
+            `${form.section}_${form.section_number}` : '';
 
         try {
             const result = await dispatch(registerTeam({
@@ -121,7 +189,9 @@ const TeamRegisterPage = () => {
                 phone_number: form.phone_number,
                 alternate_phone: form.alternate_phone,
                 password: form.password,
-                team_members: membersObject
+                team_members: membersObject,
+                section: form.section, // Send section
+                section_team_id: section_team_id // Send formatted section_team_id
             }));
 
             if (result.meta.requestStatus === 'fulfilled') {
@@ -133,7 +203,10 @@ const TeamRegisterPage = () => {
                     phone_number: '',
                     alternate_phone: '',
                     password: '',
-                    team_members: ['']
+                    confirmPassword: '', // Reset confirm password
+                    team_members: [''],
+                    section: '',
+                    section_number: ''
                 });
                 setTimeout(() => navigate('/team/login'), 2000); // Redirect after successful registration
             } else {
@@ -200,7 +273,73 @@ const TeamRegisterPage = () => {
                             onChange={handleChange} 
                         />
                         
-                        <TextField label="Password" name="password" type="password" required value={form.password} onChange={handleChange} />
+                        <TextField 
+                            label="Password" 
+                            name="password" 
+                            type="password" 
+                            required 
+                            value={form.password} 
+                            onChange={handleChange}
+                            error={!!validationErrors.password}
+                            helperText={validationErrors.password || 'Password must be at least 6 characters'}
+                        />
+                        
+                        {/* Confirm Password Field */}
+                        <TextField 
+                            label="Confirm Password" 
+                            name="confirmPassword" 
+                            type="password" 
+                            required 
+                            value={form.confirmPassword} 
+                            onChange={handleChange}
+                            error={!!validationErrors.confirmPassword}
+                            helperText={validationErrors.confirmPassword}
+                        />
+
+                        {/* Section Dropdown */}
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel id="section-label">Series</InputLabel>
+                            <Select
+                                labelId="section-label"
+                                id="section"
+                                name="section"
+                                value={form.section}
+                                label="Series"
+                                onChange={handleChange}
+                                required
+                            >
+                                {sectionOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                        {option}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        {/* Section Number Dropdown */}
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel id="section-number-label">Series ID</InputLabel>
+                            <Select
+                                labelId="section-number-label"
+                                id="section_number"
+                                name="section_number"
+                                value={form.section_number}
+                                label="Series ID"
+                                onChange={handleChange}
+                                required
+                            >
+                                {sectionNumberOptions.map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                        {option}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        
+                        {/* Warning Note */}
+                        <Alert severity="warning" sx={{ mt: 1, mb: 2 }}>
+                            Make sure you select the correct Series and ID. You won't be able to change this in the future.
+                        </Alert>
 
                         <Typography variant="subtitle1">Team Members</Typography>
                         {form.team_members.map((member, index) => (
@@ -233,7 +372,7 @@ const TeamRegisterPage = () => {
                             variant="contained"
                             color="primary"
                             sx={{ mt: 3, mb: 2 }}
-                            disabled={loading}
+                            disabled={loading || !!validationErrors.password || !!validationErrors.confirmPassword}
                         >
                             {loading ? 'Registering...' : 'Register Team'}
                         </Button>

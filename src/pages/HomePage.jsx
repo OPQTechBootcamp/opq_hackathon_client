@@ -232,7 +232,7 @@ const HomePage = () => {
             icon: <AdminPanelSettingsIcon sx={{ fontSize: 40 }} />,
             color: '#2563eb',
             buttons: [
-                { label: 'Sign In', path: '/login', show: !auth.token || !auth.user, color: 'primary' },
+                // { label: 'Sign In', path: '/login', show: !auth.token || !auth.user, color: 'primary' },
                 { label: 'Register User', path: '/admin/register', show: auth.token && auth.user?.role === 'admin', color: 'primary' },
                 { label: 'Go to Dashboard', path: `/${auth.user?.role}/dashboard`, show: auth.token && (auth.user?.role === 'admin' || auth.user?.role === 'judge' || auth.user?.role === 'coordinator'), color: 'primary' },
             ].filter(button => button.show),

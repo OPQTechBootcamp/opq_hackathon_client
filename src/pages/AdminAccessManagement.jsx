@@ -52,7 +52,7 @@ const AdminAccessManagement = () => {
     const { user } = useSelector(state => state.auth); // Current logged-in user
 
     const [selectedGroup, setSelectedGroup] = useState('');
-    const [selectedTeam, setSelectedTeam] = useState('');
+    const [selectedTeams, setSelectedTeams] = useState([]); // Now an array for multiple selection
     const [selectedJudges, setSelectedJudges] = useState([]);
     const [successMessage, setSuccessMessage] = useState('');
 
@@ -62,10 +62,10 @@ const AdminAccessManagement = () => {
         dispatch(fetchAssignments());
     }, [dispatch]);
 
-    // Reset selected judges when team changes
+    // Reset selected judges when teams change
     useEffect(() => {
         setSelectedJudges([]);
-    }, [selectedTeam]);
+    }, [selectedTeams]);
 
     // Extract unique groups from teams
     const getGroups = () => {
@@ -92,7 +92,7 @@ const AdminAccessManagement = () => {
         })
         : teams;
 
-    // Get currently assigned judge IDs for the selected team
+    // Get currently assigned judge IDs for a specific team
     const getAssignedJudgeIds = (teamId) => {
         if (!teamId) return [];
         return assignments
@@ -158,39 +158,43 @@ const AdminAccessManagement = () => {
         return false;
     };
 
-    // Main function to check if a judge should be disabled
+    // Updated to check against all selected teams
     const shouldDisableJudge = (judgeId) => {
-        if (!selectedTeam || !judgeId) return false;
+        if (selectedTeams.length === 0 || !judgeId) return false;
         
-        // Get the section of the selected team
-        const selectedTeamSection = getTeamSection(selectedTeam);
+        // Check for each selected team if the judge should be disabled
+        for (const teamId of selectedTeams) {
+            // Get the section of the current team
+            const teamSection = getTeamSection(teamId);
+            
+            if (!teamSection) continue;
+            
+            // Check if the judge is already assigned to this team
+            const teamAssignedJudgeIds = getAssignedJudgeIds(teamId);
+            const isAssignedToThisTeam = teamAssignedJudgeIds.includes(judgeId);
+            
+            // Check if the judge is assigned to any team in the same section
+            const isAssignedToSameSection = isJudgeAssignedToSection(judgeId, teamSection);
+            
+            if (isAssignedToThisTeam || isAssignedToSameSection) {
+                return true;
+            }
+        }
         
-        if (!selectedTeamSection) return false;
-        
-        // Check if the judge is already assigned to this team
-        const isAssignedToThisTeam = assignedJudgeIds.includes(judgeId);
-        
-        // Check if the judge is assigned to any team in the same section
-        const isAssignedToSameSection = isJudgeAssignedToSection(judgeId, selectedTeamSection);
-        
-        // Get the judge's name for debugging
-        const judgeName = users.find(u => u.id === judgeId)?.name || 'Unknown Judge';
-        
-        return isAssignedToThisTeam || isAssignedToSameSection;
+        return false;
     };
-
-    const assignedJudgeIds = getAssignedJudgeIds(selectedTeam);
 
     const handleGroupChange = (event) => {
         setSelectedGroup(event.target.value);
-        setSelectedTeam(''); // Reset team selection when group changes
+        setSelectedTeams([]); // Reset team selection when group changes
     };
 
+    // Updated to handle multiple teams
     const handleAssign = async () => {
-        if (!selectedTeam || selectedJudges.length === 0) return;
+        if (selectedTeams.length === 0 || selectedJudges.length === 0) return;
         try {
             await dispatch(assignJudges({ 
-                teamId: selectedTeam, 
+                teamIds: selectedTeams, // Send array of team IDs
                 judgeIds: selectedJudges.map(j => j.id) 
             })).unwrap();
             
@@ -291,22 +295,41 @@ const AdminAccessManagement = () => {
                         </Select>
                     </FormControl>
 
-                    {/* Team Selection */}
-                    <FormControl fullWidth disabled={!selectedGroup}>
-                        <InputLabel>Select Team</InputLabel>
-                        <Select
-                            value={selectedTeam}
-                            label="Select Team"
-                            onChange={(e) => setSelectedTeam(e.target.value)}
-                            size={isMobile ? "small" : "medium"}
-                        >
-                            {filteredTeams.map(team => (
-                                <MenuItem key={team.id} value={team.id}>
-                                    {team.section_team_id || team.team_code}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    {/* Team Selection - Now Autocomplete for multiple selection */}
+                    <Autocomplete
+                        multiple
+                        options={filteredTeams}
+                        getOptionLabel={(option) => option.section_team_id || option.team_code || option.team_name || `Team ${option.id}`}
+                        value={selectedTeams.map(id => filteredTeams.find(team => team.id === id || team.id === parseInt(id))).filter(Boolean)}
+                        onChange={(e, value) => setSelectedTeams(value.map(team => team.id))}
+                        renderInput={(params) => (
+                            <TextField 
+                                {...params} 
+                                label="Select Teams" 
+                                placeholder="Search teams..."
+                                helperText="Select multiple teams to assign judges to"
+                                size={isMobile ? "small" : "medium"}
+                            />
+                        )}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    label={option.section_team_id || option.team_code || option.team_name}
+                                    {...getTagProps({ index })}
+                                    color="primary"
+                                    variant="outlined"
+                                    size={isMobile ? "small" : "medium"}
+                                />
+                            ))
+                        }
+                        disabled={!selectedGroup}
+                        disableCloseOnSelect
+                        sx={{
+                            '& .MuiAutocomplete-endAdornment': {
+                                top: isMobile ? '8px' : '12px'
+                            }
+                        }}
+                    />
 
                     {/* Judge Selection with Assigned Judges Disabled */}
                     <Autocomplete
@@ -320,7 +343,7 @@ const AdminAccessManagement = () => {
                                 {...params} 
                                 label="Select Judges" 
                                 placeholder="Search judges..."
-                                helperText="Judges already assigned to this team or teams in the same group are disabled"
+                                helperText="Judges already assigned to these teams or teams in the same group are disabled"
                                 size={isMobile ? "small" : "medium"}
                             />
                         )}
@@ -335,31 +358,24 @@ const AdminAccessManagement = () => {
                                 />
                             ))
                         }
-                        // Fix: Use the improved function to check if judge is assigned to same section/group
+                        // Use the updated function to check if judge is assigned to any selected team's section
                         getOptionDisabled={(option) => shouldDisableJudge(option.id)}
                         renderOption={(props, option, { selected }) => {
-                            // Get the reason why a judge might be disabled
-                            const isAssignedToThisTeam = assignedJudgeIds.includes(option.id);
-                            const selectedTeamSection = getTeamSection(selectedTeam);
-                            const isAssignedToSameSection = selectedTeamSection ? 
-                                isJudgeAssignedToSection(option.id, selectedTeamSection) : false;
+                            // For simplicity, we'll just display if the judge is disabled
+                            const isDisabled = shouldDisableJudge(option.id);
                             
-                            let tooltipText = '';
-                            if (isAssignedToThisTeam) {
-                                tooltipText = "Already assigned to this team";
-                            } else if (isAssignedToSameSection) {
-                                tooltipText = `Already assigned to a team in Group ${selectedTeamSection}`;
-                            }
+                            let tooltipText = isDisabled ? 
+                                "Already assigned to one of these teams or a team in the same group" : "";
                             
                             return (
                                 <li {...props} style={{ 
-                                    opacity: (isAssignedToThisTeam || isAssignedToSameSection) ? 0.6 : 1,
+                                    opacity: isDisabled ? 0.6 : 1,
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center'
                                 }}>
                                     <span>{option.name}</span>
-                                    {(isAssignedToThisTeam || isAssignedToSameSection) && (
+                                    {isDisabled && (
                                         <Tooltip title={tooltipText}>
                                             <InfoIcon fontSize="small" sx={{ color: theme.palette.info.main }} />
                                         </Tooltip>
@@ -367,7 +383,7 @@ const AdminAccessManagement = () => {
                                 </li>
                             );
                         }}
-                        disabled={!selectedTeam}
+                        disabled={selectedTeams.length === 0}
                         disableCloseOnSelect
                         sx={{
                             '& .MuiAutocomplete-endAdornment': {
@@ -380,7 +396,7 @@ const AdminAccessManagement = () => {
                         variant="contained"
                         color="primary"
                         onClick={handleAssign}
-                        disabled={!selectedTeam || selectedJudges.length === 0 || loading}
+                        disabled={selectedTeams.length === 0 || selectedJudges.length === 0 || loading}
                         startIcon={<PersonAddIcon />}
                         sx={{ mt: 2 }}
                         size={isMobile ? "small" : "medium"}

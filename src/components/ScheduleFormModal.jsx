@@ -88,15 +88,22 @@ const ScheduleFormModal = ({ open, onClose, initialData }) => {
             InputLabelProps={{ shrink: true }}
             fullWidth
           />
-          <TextField
-            name="number_of_rounds"
-            label="Number of Rounds"
-            type="number"
-            value={form.number_of_rounds}
-            onChange={handleChange}
-            fullWidth
-            inputProps={{ min: 1 }}
-          />
+<TextField
+  name="number_of_rounds"
+  label="Number of Rounds"
+  type="number"
+  value={form.number_of_rounds}
+  onChange={handleChange}
+  fullWidth
+  inputProps={{ min: 1 }}
+  disabled={Boolean(initialData)}
+  helperText={
+    initialData
+      ? "Number of rounds cannot be changed after schedule creation"
+      : "Set the number of rounds for this schedule"
+  }
+/>
+
           <TextField
             name="ps_selection_time"
             label="Problem Statement Selection Time"

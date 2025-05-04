@@ -3,30 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllUsersAndTeams } from '../features/admin/adminUsersSlice';
 import {
-    Card,
-    CardContent,
-    Typography,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    CircularProgress,
-    styled,
-    Box,
-    Toolbar,
-    AppBar,
-    IconButton,
-    Tooltip,
-    Tabs,
-    Tab,
-    InputBase,
-    alpha,
-    Divider,
-    useMediaQuery,
-    useTheme
+    Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Paper, CircularProgress, styled, Box, Toolbar,
+    AppBar, IconButton, Tooltip, Tabs, Tab, InputBase, alpha, Divider,
+    useMediaQuery, useTheme
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
@@ -96,42 +76,28 @@ const StyledCard = styled(Card)(({ theme }) => ({
     overflow: 'hidden',
 }));
 
-// Responsive Tab styling
 const ResponsiveTab = styled(Tab)(({ theme }) => ({
     [theme.breakpoints.down('sm')]: {
-        minWidth: 'auto', // Allow tabs to be narrower on mobile
+        minWidth: 'auto',
         padding: theme.spacing(1),
         fontSize: theme.typography.pxToRem(12),
     },
 }));
 
-const TabPanel = (props) => {
-    const { children, value, index, ...other } = props;
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`tabpanel-${index}`}
-            aria-labelledby={`tab-${index}`}
-            {...other}
-        >
-            {value === index && (
-                <Box sx={{ pt: 2 }}>
-                    {children}
-                </Box>
-            )}
-        </div>
-    );
-};
+const TabPanel = ({ children, value, index, ...other }) => (
+    <div role="tabpanel" hidden={value !== index} id={`tabpanel-${index}`} aria-labelledby={`tab-${index}`} {...other}>
+        {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+    </div>
+);
 
 const AdminUsersScreen = () => {
     const dispatch = useDispatch();
     const { users, teams, loading, error } = useSelector((state) => state.adminUsers);
+    const { user } = useSelector((state) => state.auth);
     const [userTabValue, setUserTabValue] = useState(0);
     const [teamTabValue, setTeamTabValue] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
-    
-    // Add theme and media query for responsive design
+
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -155,36 +121,37 @@ const AdminUsersScreen = () => {
         setSearchQuery(event.target.value.toLowerCase());
     };
 
-    // Filter users based on role and search query
-    const filteredUsers = users.filter(user => {
-        const matchesSearch = 
-            searchQuery === '' || 
-            user.name.toLowerCase().includes(searchQuery) || 
-            user.email.toLowerCase().includes(searchQuery);
-        
-        if (userTabValue === 0) return matchesSearch; // All
-        if (userTabValue === 1) return user.role === 'admin' && matchesSearch;
-        if (userTabValue === 2) return user.role === 'judge' && matchesSearch;
-        if (userTabValue === 3) return user.role === 'coordinator' && matchesSearch;
-        
-        return false;
+    // Build tab configuration based on role
+    const userTabs = [
+        { label: 'All Users', icon: <AllUsersIcon fontSize="small" />, roleFilter: null },
+        { label: 'Admins', icon: <AdminIcon fontSize="small" />, roleFilter: 'admin' },
+        { label: 'Judges', icon: <JudgeIcon fontSize="small" />, roleFilter: 'judge' },
+        { label: 'Coordinators', icon: <CoordinatorIcon fontSize="small" />, roleFilter: 'coordinator' },
+    ];
+
+    const visibleUserTabs = user.role === 'coordinator' ? userTabs.slice(2) : userTabs;
+
+    const filteredUsers = users.filter((userItem) => {
+        const matchesSearch =
+            searchQuery === '' ||
+            userItem.name.toLowerCase().includes(searchQuery) ||
+            userItem.email.toLowerCase().includes(searchQuery);
+
+        const currentTab = visibleUserTabs[userTabValue];
+        if (!currentTab || !currentTab.roleFilter) return matchesSearch;
+        return userItem.role === currentTab.roleFilter && matchesSearch;
     });
 
-    // Extract unique sections/groups from teams
-    const sections = ['All Groups', ...new Set(teams.map(team => 
-        team.section ? `Section ${team.section}` : ''
-    ).filter(Boolean))].sort();
+    const sections = ['All Groups', ...new Set(teams.map(t => t.section && `Series ${t.section}`).filter(Boolean))].sort();
 
-    // Filter teams based on section and search query
     const filteredTeams = teams.filter(team => {
-        const matchesSearch = 
-            searchQuery === '' || 
-            team.team_name.toLowerCase().includes(searchQuery) || 
+        const matchesSearch =
+            searchQuery === '' ||
+            team.team_name.toLowerCase().includes(searchQuery) ||
             (team.section_team_id && team.section_team_id.toLowerCase().includes(searchQuery));
-        
-        if (teamTabValue === 0) return matchesSearch; // All Groups
-        
-        const sectionName = `Section ${team.section}`;
+
+        if (teamTabValue === 0) return matchesSearch;
+        const sectionName = `Series ${team.section}`;
         return sections[teamTabValue] === sectionName && matchesSearch;
     });
 
@@ -200,18 +167,14 @@ const AdminUsersScreen = () => {
         <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
             <AppBar position="static" color="default" elevation={1} sx={{ mb: 3, borderRadius: 1 }}>
                 <Toolbar sx={{ flexDirection: isMobile ? 'column' : 'row', py: isMobile ? 1 : 0 }}>
-                    <Typography variant="h6" color="inherit" sx={{ 
-                        flexGrow: 1, 
+                    <Typography variant="h6" color="inherit" sx={{
+                        flexGrow: 1,
                         mb: isMobile ? 1 : 0,
                         fontSize: isMobile ? '1rem' : '1.25rem'
                     }}>
                         Users & Teams Management
                     </Typography>
-                    <Box sx={{ 
-                        display: 'flex', 
-                        width: isMobile ? '100%' : 'auto',
-                        alignItems: 'center'
-                    }}>
+                    <Box sx={{ display: 'flex', width: isMobile ? '100%' : 'auto', alignItems: 'center' }}>
                         <Search sx={{ flexGrow: 1 }}>
                             <SearchIconWrapper>
                                 <SearchIcon />
@@ -232,189 +195,67 @@ const AdminUsersScreen = () => {
                 </Toolbar>
             </AppBar>
 
-            {/* Users Section */}
+            {/* Users Tabs */}
             <Box sx={{ mb: 4 }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs 
-                        value={userTabValue} 
-                        onChange={handleUserTabChange} 
+                    <Tabs
+                        value={userTabValue}
+                        onChange={handleUserTabChange}
                         indicatorColor="primary"
                         textColor="primary"
-                        aria-label="user role tabs"
                         variant="scrollable"
                         scrollButtons={isMobile ? "auto" : false}
                         allowScrollButtonsMobile
                     >
-                        <ResponsiveTab 
-                            icon={isMobile ? <AllUsersIcon fontSize="small" /> : <AllUsersIcon fontSize="small" />} 
-                            iconPosition="start" 
-                            label={isMobile ? "" : "All Users"} 
-                            aria-label="All Users"
-                        />
-                        <ResponsiveTab 
-                            icon={isMobile ? <AdminIcon fontSize="small" /> : <AdminIcon fontSize="small" />} 
-                            iconPosition="start" 
-                            label={isMobile ? "" : "Admins"} 
-                            aria-label="Admins"
-                        />
-                        <ResponsiveTab 
-                            icon={isMobile ? <JudgeIcon fontSize="small" /> : <JudgeIcon fontSize="small" />} 
-                            iconPosition="start" 
-                            label={isMobile ? "" : "Judges"} 
-                            aria-label="Judges"
-                        />
-                        <ResponsiveTab 
-                            icon={isMobile ? <CoordinatorIcon fontSize="small" /> : <CoordinatorIcon fontSize="small" />} 
-                            iconPosition="start" 
-                            label={isMobile ? "" : "Coordinators"} 
-                            aria-label="Coordinators"
-                        />
+                        {visibleUserTabs.map((tab, index) => (
+                            <ResponsiveTab
+                                key={index}
+                                icon={tab.icon}
+                                iconPosition="start"
+                                label={isMobile ? '' : tab.label}
+                                aria-label={tab.label}
+                            />
+                        ))}
                     </Tabs>
                 </Box>
-                
-                <TabPanel value={userTabValue} index={0}>
-                    <StyledCard>
-                        <CardContent sx={{ p: 0 }}>
-                            <TableContainer>
-                                <Table aria-label="users table" size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <StyledTableCell>ID</StyledTableCell>
-                                            <StyledTableCell>Name</StyledTableCell>
-                                            <StyledTableCell>Email</StyledTableCell>
-                                            <StyledTableCell>Role</StyledTableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredUsers.map((user) => (
-                                            <StyledTableRow key={user.id}>
-                                                <TableCell>{user.id}</TableCell>
-                                                <TableCell>{user.name}</TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
-                                            </StyledTableRow>
-                                        ))}
-                                        {filteredUsers.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                                                    No users found
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </CardContent>
-                    </StyledCard>
-                </TabPanel>
 
-                <TabPanel value={userTabValue} index={1}>
-                    <StyledCard>
-                        <CardContent sx={{ p: 0 }}>
-                            <TableContainer>
-                                <Table aria-label="admins table" size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <StyledTableCell>ID</StyledTableCell>
-                                            <StyledTableCell>Name</StyledTableCell>
-                                            <StyledTableCell>Email</StyledTableCell>
-                                            <StyledTableCell>Role</StyledTableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredUsers.map((user) => (
-                                            <StyledTableRow key={user.id}>
-                                                <TableCell>{user.id}</TableCell>
-                                                <TableCell>{user.name}</TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
-                                            </StyledTableRow>
-                                        ))}
-                                        {filteredUsers.length === 0 && (
+                {visibleUserTabs.map((tab, index) => (
+                    <TabPanel key={index} value={userTabValue} index={index}>
+                        <StyledCard>
+                            <CardContent sx={{ p: 0 }}>
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableHead>
                                             <TableRow>
-                                                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                                                    No admins found
-                                                </TableCell>
+                                                <StyledTableCell>ID</StyledTableCell>
+                                                <StyledTableCell>Name</StyledTableCell>
+                                                <StyledTableCell>Email</StyledTableCell>
+                                                <StyledTableCell>Role</StyledTableCell>
                                             </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </CardContent>
-                    </StyledCard>
-                </TabPanel>
-
-                <TabPanel value={userTabValue} index={2}>
-                    <StyledCard>
-                        <CardContent sx={{ p: 0 }}>
-                            <TableContainer>
-                                <Table aria-label="judges table" size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <StyledTableCell>ID</StyledTableCell>
-                                            <StyledTableCell>Name</StyledTableCell>
-                                            <StyledTableCell>Email</StyledTableCell>
-                                            <StyledTableCell>Role</StyledTableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredUsers.map((user) => (
-                                            <StyledTableRow key={user.id}>
-                                                <TableCell>{user.id}</TableCell>
-                                                <TableCell>{user.name}</TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
-                                            </StyledTableRow>
-                                        ))}
-                                        {filteredUsers.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                                                    No judges found
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </CardContent>
-                    </StyledCard>
-                </TabPanel>
-
-                <TabPanel value={userTabValue} index={3}>
-                    <StyledCard>
-                        <CardContent sx={{ p: 0 }}>
-                            <TableContainer>
-                                <Table aria-label="coordinators table" size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <StyledTableCell>ID</StyledTableCell>
-                                            <StyledTableCell>Name</StyledTableCell>
-                                            <StyledTableCell>Email</StyledTableCell>
-                                            <StyledTableCell>Role</StyledTableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredUsers.map((user) => (
-                                            <StyledTableRow key={user.id}>
-                                                <TableCell>{user.id}</TableCell>
-                                                <TableCell>{user.name}</TableCell>
-                                                <TableCell>{user.email}</TableCell>
-                                                <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
-                                            </StyledTableRow>
-                                        ))}
-                                        {filteredUsers.length === 0 && (
-                                            <TableRow>
-                                                <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                                                    No coordinators found
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </CardContent>
-                    </StyledCard>
-                </TabPanel>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredUsers.map(user => (
+                                                <StyledTableRow key={user.id}>
+                                                    <TableCell>{user.id}</TableCell>
+                                                    <TableCell>{user.name}</TableCell>
+                                                    <TableCell>{user.email}</TableCell>
+                                                    <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
+                                                </StyledTableRow>
+                                            ))}
+                                            {filteredUsers.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                                                        No {tab.label.toLowerCase()} found
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </CardContent>
+                        </StyledCard>
+                    </TabPanel>
+                ))}
             </Box>
 
             <Divider sx={{ my: 4 }} />
@@ -422,44 +263,43 @@ const AdminUsersScreen = () => {
             {/* Teams Section */}
             <Box sx={{ mt: 4 }}>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs 
-                        value={teamTabValue} 
-                        onChange={handleTeamTabChange} 
+                    <Tabs
+                        value={teamTabValue}
+                        onChange={handleTeamTabChange}
                         indicatorColor="primary"
                         textColor="primary"
-                        aria-label="team section tabs"
                         variant="scrollable"
                         scrollButtons="auto"
                         allowScrollButtonsMobile
                     >
                         {sections.map((section, index) => (
-                            <ResponsiveTab 
-                                key={index} 
-                                icon={<GroupsIcon fontSize="small" />} 
-                                iconPosition="start" 
-                                label={isMobile ? section.replace("Section ", "S") : section} 
+                            <ResponsiveTab
+                                key={index}
+                                icon={<GroupsIcon fontSize="small" />}
+                                iconPosition="start"
+                                label={isMobile ? section.replace("Series ", "S") : section}
                                 aria-label={section}
                             />
                         ))}
                     </Tabs>
                 </Box>
-                
+
                 {sections.map((section, index) => (
                     <TabPanel key={index} value={teamTabValue} index={index}>
                         <StyledCard>
                             <CardContent sx={{ p: 0 }}>
                                 <TableContainer>
-                                    <Table aria-label="teams table" size="small">
+                                    <Table size="small">
                                         <TableHead>
                                             <TableRow>
                                                 <StyledTableCell>ID</StyledTableCell>
                                                 <StyledTableCell>Team Name</StyledTableCell>
-                                                <StyledTableCell>Section</StyledTableCell>
+                                                <StyledTableCell>Series</StyledTableCell>
                                                 <StyledTableCell>Team Code</StyledTableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {filteredTeams.map((team) => (
+                                            {filteredTeams.map(team => (
                                                 <StyledTableRow key={team.id}>
                                                     <TableCell>{team.id}</TableCell>
                                                     <TableCell>{team.team_name}</TableCell>

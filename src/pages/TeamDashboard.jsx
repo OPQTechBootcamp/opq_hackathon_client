@@ -112,10 +112,10 @@ const TeamDashboard = () => {
               <strong>Judge/POC:</strong> {team.judge_name || "N/A"}
             </Typography>
             <Typography variant="subtitle1">
-              <strong>Group:</strong> {team.section || "N/A"}
+              <strong>Series:</strong> {team.section || "N/A"}
             </Typography>
             <Typography variant="subtitle1">
-              <strong>Team ID:</strong> {team.section_team_id || "N/A"}
+              <strong>Series ID:</strong> {team.section_team_id || "N/A"}
             </Typography>
           </Paper>
         )}

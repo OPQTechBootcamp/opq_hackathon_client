@@ -252,20 +252,20 @@ const JudgeDashboard = () => {
                           sx={{ 
                             mr: 1, 
                             color: theme.palette.primary.main,
-                            fontSize: isMobile ? '1.1rem' : 'inherit'
+                            fontSize: isMobile ? '0.7rem' : 'inherit'
                           }} 
                         />
-                        {team.team_name}
+                        Team name: {team.team_name}
                       </Typography>
                       
                       <Typography 
                         variant="subtitle2" 
                         color="text.secondary"
                         sx={{
-                          fontSize: isMobile ? '0.7rem' : 'inherit'
+                          fontSize: isMobile ? '1.0rem' : 'inherit'
                         }}
                       >
-                        {team.problem_statement_title}
+                        Problem Statement: {team.problem_statement_title}
                       </Typography>
                     </Box>
                     
@@ -273,7 +273,7 @@ const JudgeDashboard = () => {
                     <Box sx={{ mt: 2, mb: 3 }}>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                         <Typography variant="body2" fontWeight="medium">
-                          Evaluation Progress
+                          Evaluation Progress: 
                         </Typography>
                         <Typography variant="body2" fontWeight="bold">
                           {progress.completed}/{progress.total} Rounds

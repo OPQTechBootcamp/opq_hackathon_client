@@ -289,7 +289,7 @@ const ProblemStatementsTable = ({ page }) => {
                         variant="outlined"
                         size="small"
                         onClick={() => handleSelectProblem(ps.id)}
-                        disabled={selectionTime.minutes === 0 && selectionTime.seconds === 0}
+                        // disabled={selectionTime.minutes === 0 && selectionTime.seconds === 0}
                       >
                         Select
                       </Button>

@@ -102,7 +102,7 @@ const AdminHackathonSchedulePage = () => {
                   </TableCell>
                   <TableCell>
                     <IconButton onClick={() => handleEdit(s)}><Edit /></IconButton>
-                    <IconButton onClick={() => handleDelete(s.id)}><Delete /></IconButton>
+                    {/* <IconButton onClick={() => handleDelete(s.id)}><Delete /></IconButton> */}
                   </TableCell>
                 </TableRow>
               ))}

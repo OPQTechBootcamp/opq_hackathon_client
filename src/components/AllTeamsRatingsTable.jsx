@@ -4,11 +4,16 @@ import { fetchAllTeamsRatings } from '../features/judgeDashboard/judgeDashboardS
 import {
     Table, TableHead, TableRow, TableCell, TableBody, Paper, TableContainer, 
     CircularProgress, Box, Typography, Tabs, Tab, Chip, Rating,
-    useTheme, TableSortLabel, TablePagination, styled
+    useTheme, TableSortLabel, TablePagination, styled, Dialog, DialogTitle, 
+    DialogContent, IconButton, Button, List, ListItem, ListItemText, Divider,
+    DialogActions, Grid, Card, CardContent, DialogContentText, Tooltip
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-
+import CloseIcon from '@mui/icons-material/Close';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import apiInstance from '../utils/apiInstance';
+import { getToken } from '../utils/tokenUtils';
 // Styled table cells for consistent formatting and better horizontal scrolling
 const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
     fontWeight: 'bold',
@@ -21,6 +26,10 @@ const StyledTableCell = styled(TableCell)({
     padding: '12px'
 });
 
+const authHeader = () => ({
+  headers: { Authorization: `Bearer ${getToken()}` },
+});
+
 const AllTeamsRatingsTable = () => {
     const dispatch = useDispatch();
     const theme = useTheme();
@@ -31,6 +40,11 @@ const AllTeamsRatingsTable = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [order, setOrder] = useState('desc');
     const [orderBy, setOrderBy] = useState('average_rating');
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedTeam, setSelectedTeam] = useState(null);
+    const [teamResults, setTeamResults] = useState([]);
+    const [loadingResults, setLoadingResults] = useState(false);
+    const [resultError, setResultError] = useState(null);
 
     // Extract unique team groups
     const getTeamGroups = () => {
@@ -67,6 +81,30 @@ const AllTeamsRatingsTable = () => {
         setOrderBy(property);
     };
 
+    const handleViewDetails = async (team) => {
+        setSelectedTeam(team);
+        setLoadingResults(true);
+        setResultError(null);
+        
+        try {
+            // Fetch team evaluation details
+            const response = await apiInstance.get(`results/${team.team_id}`, authHeader());
+            setTeamResults(response.data);
+            setDialogOpen(true);
+        } catch (error) {
+            console.error('Error fetching team results:', error);
+            setResultError('Failed to load team evaluation details');
+        } finally {
+            setLoadingResults(false);
+        }
+    };
+
+    const handleCloseDialog = () => {
+        setDialogOpen(false);
+        setSelectedTeam(null);
+        setTeamResults([]);
+    };
+
     const createSortHandler = (property) => () => {
         handleRequestSort(property);
     };
@@ -97,6 +135,23 @@ const AllTeamsRatingsTable = () => {
     
     const filteredAndSortedTeams = getFilteredAndSortedTeams();
     
+    // Group team results by round
+    const groupedResults = teamResults.reduce((acc, result) => {
+        const roundKey = `Round ${result.round_number}: ${result.title}`;
+        
+        if (!acc[roundKey]) {
+            acc[roundKey] = {
+                roundNumber: result.round_number,
+                title: result.title,
+                description: result.description,
+                evaluations: []
+            };
+        }
+        
+        acc[roundKey].evaluations.push(result);
+        return acc;
+    }, {});
+    
     // Get teams for current page
     const currentPageTeams = filteredAndSortedTeams.slice(
         page * rowsPerPage,
@@ -120,6 +175,12 @@ const AllTeamsRatingsTable = () => {
             </Paper>
         );
     }
+
+    // Format date
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    };
 
     return (
         <Box sx={{ width: '100%' }}>
@@ -208,6 +269,9 @@ const AllTeamsRatingsTable = () => {
                             <StyledHeaderCell>
                                 Judges
                             </StyledHeaderCell>
+                            <StyledHeaderCell align="center">
+                                Actions
+                            </StyledHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -228,7 +292,8 @@ const AllTeamsRatingsTable = () => {
                                     sx={{ 
                                         '&:nth-of-type(odd)': { 
                                             backgroundColor: theme.palette.action.hover 
-                                        }
+                                        },
+                                        cursor: 'pointer'
                                     }}
                                 >
                                     <StyledTableCell>
@@ -315,12 +380,25 @@ const AllTeamsRatingsTable = () => {
                                             )}
                                         </Box>
                                     </StyledTableCell>
+                                    <StyledTableCell align="center">
+                                        <Tooltip title="View Details">
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                color="primary"
+                                                startIcon={<VisibilityIcon />}
+                                                onClick={() => handleViewDetails(team)}
+                                            >
+                                                Details
+                                            </Button>
+                                        </Tooltip>
+                                    </StyledTableCell>
                                 </TableRow>
                             );
                         })}
                         {filteredAndSortedTeams.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                                <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
                                     <Typography variant="body1">No teams available in this group.</Typography>
                                 </TableCell>
                             </TableRow>
@@ -338,6 +416,208 @@ const AllTeamsRatingsTable = () => {
                 onPageChange={handleChangePage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
             />
+
+            {/* Team Results Detail Dialog */}
+            <Dialog
+                open={dialogOpen}
+                onClose={handleCloseDialog}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle sx={{ 
+                    backgroundColor: theme.palette.primary.main, 
+                    color: 'white',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Box>
+                        <Typography variant="h6">
+                            Team Evaluation Details
+                        </Typography>
+                        {selectedTeam && (
+                            <Typography variant="subtitle1">
+                                {selectedTeam.team_code} - {selectedTeam.team_name}
+                            </Typography>
+                        )}
+                    </Box>
+                    <IconButton
+                        edge="end"
+                        color="inherit"
+                        onClick={handleCloseDialog}
+                        aria-label="close"
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    {loadingResults ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : resultError ? (
+                        <Alert severity="error">{resultError}</Alert>
+                    ) : teamResults.length === 0 ? (
+                        <DialogContentText>
+                            No evaluation details available for this team.
+                        </DialogContentText>
+                    ) : (
+                        <Box>
+                            {/* Display results grouped by round */}
+                            {Object.entries(groupedResults).map(([roundKey, roundData], index) => (
+                                <Box key={roundKey} sx={{ mb: 4 }}>
+                                    <Typography 
+                                        variant="h6" 
+                                        color="primary" 
+                                        gutterBottom
+                                        sx={{
+                                            pb: 1,
+                                            borderBottom: `1px solid ${theme.palette.divider}`
+                                        }}
+                                    >
+                                        {roundKey}
+                                    </Typography>
+                                    
+                                    {roundData.description && (
+                                        <Typography 
+                                            variant="body2" 
+                                            color="text.secondary"
+                                            sx={{ mb: 2 }}
+                                        >
+                                            {roundData.description}
+                                        </Typography>
+                                    )}
+                                    
+                                    <Grid container spacing={2}>
+                                        {roundData.evaluations.map((evaluation, evalIndex) => (
+                                            <Grid item xs={12} md={6} key={evalIndex}>
+                                                <Card 
+                                                    elevation={2}
+                                                    sx={{ 
+                                                        height: '100%',
+                                                        border: `1px solid ${theme.palette.divider}`
+                                                    }}
+                                                >
+                                                    <CardContent>
+                                                        <Typography 
+                                                            variant="subtitle1" 
+                                                            fontWeight="bold"
+                                                            gutterBottom
+                                                        >
+                                                            Judge: {evaluation.judge_name}
+                                                        </Typography>
+                                                        
+                                                        <Typography 
+                                                            variant="caption" 
+                                                            color="text.secondary"
+                                                            display="block"
+                                                            gutterBottom
+                                                        >
+                                                            Evaluated on: {formatDate(evaluation.created_at)}
+                                                        </Typography>
+                                                        
+                                                        <Grid container spacing={1} sx={{ mt: 1 }}>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Innovation: <strong>{evaluation.innovation}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Technical: <strong>{evaluation.technical}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Relevance: <strong>{evaluation.relevance}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Feasibility: <strong>{evaluation.feasibility}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Design: <strong>{evaluation.design}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Collaboration: <strong>{evaluation.collaboration}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Presentation: <strong>{evaluation.presentation}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                            <Grid item xs={6}>
+                                                                <Typography variant="body2">
+                                                                    Bonus: <strong>{evaluation.bonus}</strong>
+                                                                </Typography>
+                                                            </Grid>
+                                                        </Grid>
+                                                        
+                                                        <Box 
+                                                            sx={{ 
+                                                                mt: 2, 
+                                                                p: 1, 
+                                                                bgcolor: theme.palette.primary.main + '22',
+                                                                borderRadius: 1,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between'
+                                                            }}
+                                                        >
+                                                            <Typography fontWeight="bold">
+                                                                Total Score:
+                                                            </Typography>
+                                                            <Typography 
+                                                                fontWeight="bold" 
+                                                                variant="h6"
+                                                                sx={{ 
+                                                                    color: getRatingColor(evaluation.total_score)
+                                                                }}
+                                                            >
+                                                                {evaluation.total_score} / 80
+                                                            </Typography>
+                                                        </Box>
+                                                        
+                                                        {evaluation.comment && (
+                                                            <Box sx={{ mt: 2 }}>
+                                                                <Typography variant="subtitle2">
+                                                                    Comments:
+                                                                </Typography>
+                                                                <Typography 
+                                                                    variant="body2" 
+                                                                    sx={{ 
+                                                                        mt: 0.5,
+                                                                        p: 1,
+                                                                        bgcolor: theme.palette.background.default,
+                                                                        borderRadius: 1
+                                                                    }}
+                                                                >
+                                                                    {evaluation.comment}
+                                                                </Typography>
+                                                            </Box>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialog} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 };

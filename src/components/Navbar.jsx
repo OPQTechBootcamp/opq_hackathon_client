@@ -270,7 +270,7 @@ const Navbar = () => {
                             src={logo} 
                             alt="Hackathon Platform Logo" 
                             sx={{ 
-                                height: 40, 
+                                height: 60, 
                                 mr: 2,
                                 transition: 'transform 0.2s',
                                 '&:hover': {
@@ -278,16 +278,6 @@ const Navbar = () => {
                                 }
                             }} 
                         />
-                        <Typography
-                            variant="h6"
-                            sx={{ 
-                                color: theme.palette.primary.main, 
-                                fontWeight: 700,
-                                display: { xs: 'none', sm: 'block' } 
-                            }}
-                        >
-                            Hackathon Platform
-                        </Typography>
                     </Box>
                     
                     {/* Mobile Menu */}

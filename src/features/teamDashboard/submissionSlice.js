@@ -46,8 +46,6 @@ const submissionSlice = createSlice({
                 state.status = action.payload?.status || 'success';
             })
             .addCase(submitRoundEntry.rejected, (state, action) => {
-                console.log("Submission Rejected State:", state);
-                console.log("Submission Rejected Action:", action);
                 state.loading = false;
                 state.error = action.payload || "Submission failed.";
                 state.status = 'error';

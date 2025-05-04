@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Menu, MenuItem, Typography, Button
+  IconButton, Menu, MenuItem, Typography, Button, Box, Chip
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import TimerIcon from '@mui/icons-material/Timer';
 import apiInstance from '../utils/apiInstance';
 import { getToken, getTeamToken } from '../utils/tokenUtils';
 import { useSelector } from 'react-redux';
-import RefreshIcon from '@mui/icons-material/Refresh';
+
 const ProblemStatementsTable = ({ page }) => {
   const [problemStatements, setProblemStatements] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -15,6 +17,11 @@ const ProblemStatementsTable = ({ page }) => {
   const [teamSelectedId, setTeamSelectedId] = useState(null);
   const [accessBlocked, setAccessBlocked] = useState(false);
   const [remainingMinutes, setRemainingMinutes] = useState(null);
+  const [selectionTime, setSelectionTime] = useState({
+    minutes: 0,
+    seconds: 0
+  });
+  const timerRef = useRef(null);
   const { user } = useSelector((state) => state.auth);
   const teamData = useSelector((state) => state?.team?.team);
   const id = page === "team" ? teamData?.id : null;
@@ -26,7 +33,46 @@ const ProblemStatementsTable = ({ page }) => {
     if (page === "team") {
       fetchTeamSelection();
     }
+    
+    // Clean up timer on unmount
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
   }, []);
+
+  const startCountdownTimer = (totalMinutes) => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    // Calculate initial time
+    let totalSeconds = totalMinutes * 60;
+    
+    // Update state immediately
+    setSelectionTime({
+      minutes: Math.floor(totalSeconds / 60),
+      seconds: totalSeconds % 60
+    });
+    
+    // Set up interval
+    timerRef.current = setInterval(() => {
+      totalSeconds -= 1;
+      
+      if (totalSeconds <= 0) {
+        clearInterval(timerRef.current);
+        // Refresh data when timer expires
+        fetchProblems();
+      }
+      
+      setSelectionTime({
+        minutes: Math.floor(totalSeconds / 60),
+        seconds: totalSeconds % 60
+      });
+    }, 1000);
+  };
 
   const fetchProblems = async () => {
     try {
@@ -35,7 +81,19 @@ const ProblemStatementsTable = ({ page }) => {
           Authorization: `Bearer ${page === "team" ? getTeamToken() : getToken()}`
         }
       });
-      setProblemStatements(res.data);
+      
+      // Check if response includes the new structure with problemStatements and selectionRemainingMins
+      if (res.data && res.data.problemStatements) {
+        setProblemStatements(res.data.problemStatements);
+        
+        // Start timer if there's remaining time for selection and we're on the team page
+        if (page === "team" && res.data.selectionRemainingMins > 0) {
+          startCountdownTimer(res.data.selectionRemainingMins);
+        }
+      } else {
+        // Handle old API format
+        setProblemStatements(res.data);
+      }
     } catch (err) {
       console.error("Error fetching problems", err);
 
@@ -53,7 +111,6 @@ const ProblemStatementsTable = ({ page }) => {
           setRemainingMinutes(formatted);
         }
       }
-
     }
   };
 
@@ -148,14 +205,21 @@ const ProblemStatementsTable = ({ page }) => {
       alert("Failed to select problem statement.");
     }
   };
+  
+  // Format the timer display
+  const formatTime = (minutes, seconds) => {
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   if (accessBlocked) {
     return (
-      <>    <Paper sx={{ padding: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Problem Statements</Typography>
-        <IconButton onClick={fetchProblems}>
-          <RefreshIcon />
-        </IconButton>
-      </Paper>
+      <>    
+        <Paper sx={{ padding: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">Problem Statements</Typography>
+          <IconButton onClick={fetchProblems}>
+            <RefreshIcon />
+          </IconButton>
+        </Paper>
         <Paper sx={{ padding: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="error">
             Hackathon hasn't started yet.
@@ -163,16 +227,32 @@ const ProblemStatementsTable = ({ page }) => {
           <Typography variant="body1" mt={2}>
             Please check back in {remainingMinutes || 'a while'} and refresh the page.
           </Typography>
-        </Paper></>
+        </Paper>
+      </>
     );
   }
+
   return (
-    <><Paper sx={{ padding: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Typography variant="h6">Problem Statements</Typography>
-      <IconButton onClick={fetchProblems}>
-        <RefreshIcon />
-      </IconButton>
-    </Paper>
+    <>
+      <Paper sx={{ padding: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h6">Problem Statements</Typography>
+          {page === "team" && (selectionTime.minutes > 0 || selectionTime.seconds > 0) && (
+            <Chip 
+              icon={<TimerIcon />} 
+              label={`Selection time: ${formatTime(selectionTime.minutes, selectionTime.seconds)}`}
+              color="primary"
+              sx={{ 
+                fontWeight: 'bold',
+                '& .MuiChip-icon': { color: 'inherit' }
+              }}
+            />
+          )}
+        </Box>
+        <IconButton onClick={fetchProblems}>
+          <RefreshIcon />
+        </IconButton>
+      </Paper>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -186,7 +266,7 @@ const ProblemStatementsTable = ({ page }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {problemStatements.map((ps) => (
+            {Array.isArray(problemStatements) && problemStatements.map((ps) => (
               <TableRow
                 key={ps.id}
                 sx={page === "team" && ps.id === teamSelectedId ? { backgroundColor: "#e0f7fa" } : {}}
@@ -209,6 +289,7 @@ const ProblemStatementsTable = ({ page }) => {
                         variant="outlined"
                         size="small"
                         onClick={() => handleSelectProblem(ps.id)}
+                        disabled={selectionTime.minutes === 0 && selectionTime.seconds === 0}
                       >
                         Select
                       </Button>
@@ -238,9 +319,17 @@ const ProblemStatementsTable = ({ page }) => {
                 </TableCell>
               </TableRow>
             ))}
+            {(!problemStatements || problemStatements.length === 0) && (
+              <TableRow>
+                <TableCell colSpan={page === "team" ? 6 : 5} align="center">
+                  No problem statements available
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
-      </TableContainer></>
+      </TableContainer>
+    </>
   );
 };
 

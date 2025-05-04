@@ -31,7 +31,6 @@ export const fetchTeams = createAsyncThunk('admin/fetchTeams', async (_, thunkAP
 });
 
 export const fetchAssignments = createAsyncThunk('admin/fetchAssignments', async (_, thunkAPI) => {
-    console.log("Called fetchAssignments");
     try {
         return await fetchAssignmentsAPI();
     } catch (error) {
@@ -54,7 +53,6 @@ export const unassignJudge = createAsyncThunk(
         try {
             const assignmentId = data.assignmentId;
             const response = await unAssignJudgesAPI(assignmentId);
-            console.log("Full unassignJudge Response:", response); // Log the entire response
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(error.response?.data?.message || 'Failed to unassign judge');

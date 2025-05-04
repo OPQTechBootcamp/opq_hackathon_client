@@ -24,7 +24,9 @@ import {
     Tab,
     InputBase,
     alpha,
-    Divider
+    Divider,
+    useMediaQuery,
+    useTheme
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
@@ -94,6 +96,15 @@ const StyledCard = styled(Card)(({ theme }) => ({
     overflow: 'hidden',
 }));
 
+// Responsive Tab styling
+const ResponsiveTab = styled(Tab)(({ theme }) => ({
+    [theme.breakpoints.down('sm')]: {
+        minWidth: 'auto', // Allow tabs to be narrower on mobile
+        padding: theme.spacing(1),
+        fontSize: theme.typography.pxToRem(12),
+    },
+}));
+
 const TabPanel = (props) => {
     const { children, value, index, ...other } = props;
     return (
@@ -119,6 +130,10 @@ const AdminUsersScreen = () => {
     const [userTabValue, setUserTabValue] = useState(0);
     const [teamTabValue, setTeamTabValue] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    
+    // Add theme and media query for responsive design
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     useEffect(() => {
         dispatch(fetchAllUsersAndTeams());
@@ -182,27 +197,38 @@ const AdminUsersScreen = () => {
     if (error) return <Typography color="error" sx={{ p: 3 }}>{error}</Typography>;
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 1, sm: 2, md: 3 } }}>
             <AppBar position="static" color="default" elevation={1} sx={{ mb: 3, borderRadius: 1 }}>
-                <Toolbar>
-                    <Typography variant="h6" color="inherit" sx={{ flexGrow: 1 }}>
+                <Toolbar sx={{ flexDirection: isMobile ? 'column' : 'row', py: isMobile ? 1 : 0 }}>
+                    <Typography variant="h6" color="inherit" sx={{ 
+                        flexGrow: 1, 
+                        mb: isMobile ? 1 : 0,
+                        fontSize: isMobile ? '1rem' : '1.25rem'
+                    }}>
                         Users & Teams Management
                     </Typography>
-                    <Search>
-                        <SearchIconWrapper>
-                            <SearchIcon />
-                        </SearchIconWrapper>
-                        <StyledInputBase
-                            placeholder="Search…"
-                            inputProps={{ 'aria-label': 'search' }}
-                            onChange={handleSearchChange}
-                        />
-                    </Search>
-                    <Tooltip title="Refresh Data">
-                        <IconButton onClick={handleRefresh} color="primary">
-                            <RefreshIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ 
+                        display: 'flex', 
+                        width: isMobile ? '100%' : 'auto',
+                        alignItems: 'center'
+                    }}>
+                        <Search sx={{ flexGrow: 1 }}>
+                            <SearchIconWrapper>
+                                <SearchIcon />
+                            </SearchIconWrapper>
+                            <StyledInputBase
+                                placeholder="Search…"
+                                inputProps={{ 'aria-label': 'search' }}
+                                onChange={handleSearchChange}
+                                fullWidth
+                            />
+                        </Search>
+                        <Tooltip title="Refresh Data">
+                            <IconButton onClick={handleRefresh} color="primary" sx={{ ml: 1 }}>
+                                <RefreshIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 </Toolbar>
             </AppBar>
 
@@ -215,11 +241,34 @@ const AdminUsersScreen = () => {
                         indicatorColor="primary"
                         textColor="primary"
                         aria-label="user role tabs"
+                        variant="scrollable"
+                        scrollButtons={isMobile ? "auto" : false}
+                        allowScrollButtonsMobile
                     >
-                        <Tab icon={<AllUsersIcon fontSize="small" />} iconPosition="start" label="All Users" />
-                        <Tab icon={<AdminIcon fontSize="small" />} iconPosition="start" label="Admins" />
-                        <Tab icon={<JudgeIcon fontSize="small" />} iconPosition="start" label="Judges" />
-                        <Tab icon={<CoordinatorIcon fontSize="small" />} iconPosition="start" label="Coordinators" />
+                        <ResponsiveTab 
+                            icon={isMobile ? <AllUsersIcon fontSize="small" /> : <AllUsersIcon fontSize="small" />} 
+                            iconPosition="start" 
+                            label={isMobile ? "" : "All Users"} 
+                            aria-label="All Users"
+                        />
+                        <ResponsiveTab 
+                            icon={isMobile ? <AdminIcon fontSize="small" /> : <AdminIcon fontSize="small" />} 
+                            iconPosition="start" 
+                            label={isMobile ? "" : "Admins"} 
+                            aria-label="Admins"
+                        />
+                        <ResponsiveTab 
+                            icon={isMobile ? <JudgeIcon fontSize="small" /> : <JudgeIcon fontSize="small" />} 
+                            iconPosition="start" 
+                            label={isMobile ? "" : "Judges"} 
+                            aria-label="Judges"
+                        />
+                        <ResponsiveTab 
+                            icon={isMobile ? <CoordinatorIcon fontSize="small" /> : <CoordinatorIcon fontSize="small" />} 
+                            iconPosition="start" 
+                            label={isMobile ? "" : "Coordinators"} 
+                            aria-label="Coordinators"
+                        />
                     </Tabs>
                 </Box>
                 
@@ -379,15 +428,17 @@ const AdminUsersScreen = () => {
                         indicatorColor="primary"
                         textColor="primary"
                         aria-label="team section tabs"
-                        scrollButtons="auto"
                         variant="scrollable"
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
                     >
                         {sections.map((section, index) => (
-                            <Tab 
+                            <ResponsiveTab 
                                 key={index} 
                                 icon={<GroupsIcon fontSize="small" />} 
                                 iconPosition="start" 
-                                label={section} 
+                                label={isMobile ? section.replace("Section ", "S") : section} 
+                                aria-label={section}
                             />
                         ))}
                     </Tabs>

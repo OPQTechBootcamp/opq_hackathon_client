@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  IconButton, Button, Typography, CircularProgress, Stack
+  IconButton, Button, Typography, CircularProgress, Stack, Tooltip, Chip
 } from '@mui/material';
-import { Edit, Delete, Refresh } from '@mui/icons-material';
+import { Edit, Delete, Refresh, AccessTimeOutlined } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchSchedules,
@@ -23,8 +23,8 @@ const AdminHackathonSchedulePage = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Delete this schedule?')) {
-dispatch(deleteSchedule(id));
-dispatch(fetchSchedules());
+      dispatch(deleteSchedule(id));
+      dispatch(fetchSchedules());
     }
   };
 
@@ -35,6 +35,17 @@ dispatch(fetchSchedules());
 
   const handleRefresh = () => {
     dispatch(fetchSchedules());
+  };
+
+  // Helper function to format time in minutes
+  const formatSelectionTime = (minutes) => {
+    if (!minutes) return 'Not set';
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 
+      ? `${hours}h ${remainingMinutes}m` 
+      : `${hours}h`;
   };
 
   return (
@@ -67,6 +78,7 @@ dispatch(fetchSchedules());
                 <TableCell>Start</TableCell>
                 <TableCell>End</TableCell>
                 <TableCell>Rounds</TableCell>
+                <TableCell>PS Selection Time</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -78,11 +90,29 @@ dispatch(fetchSchedules());
                   <TableCell>{new Date(s.end_datetime).toLocaleString()}</TableCell>
                   <TableCell>{s.number_of_rounds}</TableCell>
                   <TableCell>
+                    <Tooltip title="Time allowed for problem statement selection">
+                      <Chip
+                        icon={<AccessTimeOutlined fontSize="small" />}
+                        label={formatSelectionTime(s.ps_selection_time)}
+                        size="small"
+                        color={s.ps_selection_time ? "primary" : "default"}
+                        variant="outlined"
+                      />
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
                     <IconButton onClick={() => handleEdit(s)}><Edit /></IconButton>
                     <IconButton onClick={() => handleDelete(s.id)}><Delete /></IconButton>
                   </TableCell>
                 </TableRow>
               ))}
+              {schedules.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    No schedules found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>

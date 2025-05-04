@@ -7,7 +7,12 @@ import {
   TextField,
   Button,
   Stack,
+  Typography,
+  InputAdornment,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { useDispatch } from "react-redux";
 import {
   addSchedule,
@@ -22,6 +27,7 @@ const ScheduleFormModal = ({ open, onClose, initialData }) => {
     start_datetime: "",
     end_datetime: "",
     number_of_rounds: 1,
+    ps_selection_time: 30, // Default to 30 minutes
   });
 
   useEffect(() => {
@@ -32,6 +38,7 @@ const ScheduleFormModal = ({ open, onClose, initialData }) => {
         start_datetime: "",
         end_datetime: "",
         number_of_rounds: 1,
+        ps_selection_time: 30, // Default to 30 minutes
       });
   }, [initialData]);
 
@@ -89,6 +96,30 @@ const ScheduleFormModal = ({ open, onClose, initialData }) => {
             onChange={handleChange}
             fullWidth
             inputProps={{ min: 1 }}
+          />
+          <TextField
+            name="ps_selection_time"
+            label="Problem Statement Selection Time"
+            type="number"
+            value={form.ps_selection_time}
+            onChange={handleChange}
+            fullWidth
+            inputProps={{ min: 1 }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography variant="body2" color="text.secondary" mr={1}>
+                    minutes
+                  </Typography>
+                  <Tooltip title="Time allowed for teams to select their problem statement">
+                    <IconButton size="small" edge="end">
+                      <HelpOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ),
+            }}
+            helperText="Specify how many minutes teams will have to select their problem statement"
           />
         </Stack>
       </DialogContent>

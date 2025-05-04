@@ -4,7 +4,8 @@ import {
     FormControl, InputLabel, Select, MenuItem,
     Autocomplete, TextField, CircularProgress,
     Stack, IconButton, List, ListItem, ListItemText, 
-    Chip, Divider, Grid, Alert, useTheme, Tooltip
+    Chip, Divider, Grid, Alert, useTheme, Tooltip,
+    useMediaQuery
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -24,6 +25,9 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
     marginBottom: theme.spacing(3),
     borderRadius: theme.shape.borderRadius,
     boxShadow: theme.shadows[2],
+    [theme.breakpoints.down('sm')]: {
+        padding: theme.spacing(2),
+    },
 }));
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
@@ -34,12 +38,16 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
     alignItems: 'center',
     '& > svg': {
         marginRight: theme.spacing(1)
-    }
+    },
+    [theme.breakpoints.down('sm')]: {
+        fontSize: '1.25rem',
+    },
 }));
 
 const AdminAccessManagement = () => {
     const dispatch = useDispatch();
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { users, teams, assignments, loading, error } = useSelector(state => state.admin);
     const { user } = useSelector(state => state.auth); // Current logged-in user
 
@@ -69,10 +77,17 @@ const AdminAccessManagement = () => {
 
     const groups = getGroups();
 
+    // Extract section/group from team code (e.g., "A" from "A_1")
+    const extractSectionFromTeamCode = (teamCode) => {
+        if (!teamCode) return null;
+        return teamCode.includes('_') ? teamCode.split('_')[0] : teamCode;
+    };
+
     // Filter teams by selected group
     const filteredTeams = selectedGroup 
         ? teams.filter(team => {
-            const teamGroup = team.section || (team.section_team_id ? team.section_team_id.split('_')[0] : null);
+            const teamGroup = team.section || 
+                              (team.section_team_id ? extractSectionFromTeamCode(team.section_team_id) : null);
             return teamGroup === selectedGroup;
         })
         : teams;
@@ -82,50 +97,86 @@ const AdminAccessManagement = () => {
         if (!teamId) return [];
         return assignments
             .filter(assign => assign.team_id === teamId)
-            .map(assign => assign.judge_id);
+            .map(assign => {
+                // Try to get judge ID - it might be stored in different ways
+                return assign.judge_id || 
+                       (assign.judge_name && findJudgeIdByName(assign.judge_name)) || 
+                       null;
+            })
+            .filter(Boolean); // Remove null/undefined values
     };
 
-    // Get team code from team ID
-    const getTeamCode = (teamId) => {
-        if (!teamId) return '';
-        const team = teams.find(t => t.id === teamId);
-        return team ? (team.section_team_id || team.team_code || '') : '';
+    // Helper function to find judge ID by name
+    const findJudgeIdByName = (judgeName) => {
+        const judge = users.find(u => u.role === 'judge' && u.name === judgeName);
+        return judge ? judge.id : null;
     };
 
-    // Get assigned teams for each judge
-    const getJudgeAssignments = (judgeId) => {
-        if (!judgeId) return [];
-        return assignments
-            .filter(assign => assign.judge_id === judgeId)
-            .map(assign => ({
-                teamId: assign.team_id,
-                teamCode: assign.section_team_id || '',
-                teamName: assign.team_name
-            }));
+    // Get team section/group from team ID
+    const getTeamSection = (teamId) => {
+        if (!teamId) return null;
+        const team = teams.find(t => t.id === teamId || t.id === parseInt(teamId));
+        if (!team) return null;
+        
+        // Try to get section from section_team_id first
+        if (team.section_team_id) {
+            return extractSectionFromTeamCode(team.section_team_id);
+        }
+        // Or use section directly if available
+        return team.section || null;
     };
 
-    // Check if a judge is already assigned to teams with the same team code
-    const isJudgeAssignedToSameTeamCode = (judgeId) => {
+    // Check if a judge is already assigned to any team in the specified section
+    const isJudgeAssignedToSection = (judgeId, section) => {
+        if (!judgeId || !section) return false;
+        
+        // Find the judge's name
+        const judge = users.find(u => u.id === judgeId);
+        if (!judge) return false;
+        
+        const judgeName = judge.name;
+        
+        // Check if this judge name appears in any assignments in this section
+        for (const assign of assignments) {
+            // Skip if not the judge we're checking
+            if (assign.judge_name !== judgeName) continue;
+            
+            // Get section from the assignment
+            let assignmentSection = null;
+            if (assign.section_team_id) {
+                assignmentSection = extractSectionFromTeamCode(assign.section_team_id);
+            } else if (assign.section) {
+                assignmentSection = assign.section;
+            }
+            
+            // If the judge is assigned to a team in the same section, return true
+            if (assignmentSection === section) {
+                return true;
+            }
+        }
+        
+        return false;
+    };
+
+    // Main function to check if a judge should be disabled
+    const shouldDisableJudge = (judgeId) => {
         if (!selectedTeam || !judgeId) return false;
         
-        const currentTeamCode = getTeamCode(selectedTeam);
-        if (!currentTeamCode) return false;
+        // Get the section of the selected team
+        const selectedTeamSection = getTeamSection(selectedTeam);
         
-        const judgeAssignments = getJudgeAssignments(judgeId);
+        if (!selectedTeamSection) return false;
         
-        return judgeAssignments.some(assignment => {
-            const assignmentTeamCode = assignment.teamCode;
-            // If team code includes underscore, compare the part before the underscore
-            const assignmentCode = assignmentTeamCode.includes('_') 
-                ? assignmentTeamCode.split('_')[0] 
-                : assignmentTeamCode;
-            
-            const currentCode = currentTeamCode.includes('_') 
-                ? currentTeamCode.split('_')[0] 
-                : currentTeamCode;
-                
-            return assignmentCode === currentCode;
-        });
+        // Check if the judge is already assigned to this team
+        const isAssignedToThisTeam = assignedJudgeIds.includes(judgeId);
+        
+        // Check if the judge is assigned to any team in the same section
+        const isAssignedToSameSection = isJudgeAssignedToSection(judgeId, selectedTeamSection);
+        
+        // Get the judge's name for debugging
+        const judgeName = users.find(u => u.id === judgeId)?.name || 'Unknown Judge';
+        
+        return isAssignedToThisTeam || isAssignedToSameSection;
     };
 
     const assignedJudgeIds = getAssignedJudgeIds(selectedTeam);
@@ -188,15 +239,31 @@ const AdminAccessManagement = () => {
         acc[key].judges.push({
             id: assign.id,
             judgeName: assign.judge_name,
-            judgeId: assign.judge_id
+            judgeId: assign.judge_id || findJudgeIdByName(assign.judge_name) // Try to get ID from name if not available
         });
         return acc;
     }, {});
 
+    // Debug: Log all judges with their assigned sections
+    useEffect(() => {
+        if (assignments.length > 0 && users.length > 0) {
+            
+            users.filter(u => u.role === 'judge').forEach(judge => {
+                // Find assignments by matching judge name instead of ID
+                const judgeAssignments = assignments.filter(a => a.judge_name === judge.name);
+                
+                const assignedSections = [...new Set(judgeAssignments.map(a => {
+                    return a.section || (a.section_team_id ? extractSectionFromTeamCode(a.section_team_id) : 'Unknown');
+                }))];
+                
+            });
+        }
+    }, [assignments, users]);
+
     return (
-        <Container maxWidth="md" sx={{ py: 4 }}>
-            <StyledTypography variant="h4" gutterBottom>
-                <BadgeIcon fontSize="large" /> Access Management
+        <Container maxWidth="md" sx={{ py: { xs: 2, md: 4 } }}>
+            <StyledTypography variant={isMobile ? "h5" : "h4"} gutterBottom>
+                <BadgeIcon fontSize={isMobile ? "medium" : "large"} /> Access Management
             </StyledTypography>
 
             {loading && <CircularProgress sx={{ mt: 2, mb: 2 }} />}
@@ -208,7 +275,7 @@ const AdminAccessManagement = () => {
                 <StyledTypography variant="h6" gutterBottom>
                     <PersonAddIcon /> Assign Judges to Teams
                 </StyledTypography>
-                <Stack spacing={3}>
+                <Stack spacing={isMobile ? 2 : 3}>
                     {/* Group Selection */}
                     <FormControl fullWidth>
                         <InputLabel>Select Group</InputLabel>
@@ -216,6 +283,7 @@ const AdminAccessManagement = () => {
                             value={selectedGroup}
                             label="Select Group"
                             onChange={handleGroupChange}
+                            size={isMobile ? "small" : "medium"}
                         >
                             {groups.map(group => (
                                 <MenuItem key={group} value={group}>Group {group}</MenuItem>
@@ -230,6 +298,7 @@ const AdminAccessManagement = () => {
                             value={selectedTeam}
                             label="Select Team"
                             onChange={(e) => setSelectedTeam(e.target.value)}
+                            size={isMobile ? "small" : "medium"}
                         >
                             {filteredTeams.map(team => (
                                 <MenuItem key={team.id} value={team.id}>
@@ -251,7 +320,8 @@ const AdminAccessManagement = () => {
                                 {...params} 
                                 label="Select Judges" 
                                 placeholder="Search judges..."
-                                helperText="Judges already assigned to this team or teams with the same team code are disabled"
+                                helperText="Judges already assigned to this team or teams in the same group are disabled"
+                                size={isMobile ? "small" : "medium"}
                             />
                         )}
                         renderTags={(value, getTagProps) =>
@@ -261,34 +331,35 @@ const AdminAccessManagement = () => {
                                     {...getTagProps({ index })}
                                     color="primary"
                                     variant="outlined"
+                                    size={isMobile ? "small" : "medium"}
                                 />
                             ))
                         }
-                        // Disable options if already assigned to this team or any team with the same team code
-                        getOptionDisabled={(option) => 
-                            assignedJudgeIds.includes(option.id) || 
-                            isJudgeAssignedToSameTeamCode(option.id)
-                        }
+                        // Fix: Use the improved function to check if judge is assigned to same section/group
+                        getOptionDisabled={(option) => shouldDisableJudge(option.id)}
                         renderOption={(props, option, { selected }) => {
-                            const isAssigned = assignedJudgeIds.includes(option.id);
-                            const isAssignedToSameTeamCode = isJudgeAssignedToSameTeamCode(option.id);
+                            // Get the reason why a judge might be disabled
+                            const isAssignedToThisTeam = assignedJudgeIds.includes(option.id);
+                            const selectedTeamSection = getTeamSection(selectedTeam);
+                            const isAssignedToSameSection = selectedTeamSection ? 
+                                isJudgeAssignedToSection(option.id, selectedTeamSection) : false;
                             
                             let tooltipText = '';
-                            if (isAssigned) {
+                            if (isAssignedToThisTeam) {
                                 tooltipText = "Already assigned to this team";
-                            } else if (isAssignedToSameTeamCode) {
-                                tooltipText = "Already assigned to a team with the same team code";
+                            } else if (isAssignedToSameSection) {
+                                tooltipText = `Already assigned to a team in Group ${selectedTeamSection}`;
                             }
                             
                             return (
                                 <li {...props} style={{ 
-                                    opacity: (isAssigned || isAssignedToSameTeamCode) ? 0.6 : 1,
+                                    opacity: (isAssignedToThisTeam || isAssignedToSameSection) ? 0.6 : 1,
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center'
                                 }}>
                                     <span>{option.name}</span>
-                                    {(isAssigned || isAssignedToSameTeamCode) && (
+                                    {(isAssignedToThisTeam || isAssignedToSameSection) && (
                                         <Tooltip title={tooltipText}>
                                             <InfoIcon fontSize="small" sx={{ color: theme.palette.info.main }} />
                                         </Tooltip>
@@ -298,6 +369,11 @@ const AdminAccessManagement = () => {
                         }}
                         disabled={!selectedTeam}
                         disableCloseOnSelect
+                        sx={{
+                            '& .MuiAutocomplete-endAdornment': {
+                                top: isMobile ? '8px' : '12px'
+                            }
+                        }}
                     />
 
                     <Button
@@ -307,6 +383,7 @@ const AdminAccessManagement = () => {
                         disabled={!selectedTeam || selectedJudges.length === 0 || loading}
                         startIcon={<PersonAddIcon />}
                         sx={{ mt: 2 }}
+                        size={isMobile ? "small" : "medium"}
                     >
                         {loading ? <CircularProgress size={24} color="inherit" /> : 'Assign Judges'}
                     </Button>
@@ -320,30 +397,37 @@ const AdminAccessManagement = () => {
                 </StyledTypography>
                 
                 {Object.keys(assignmentsByTeam).length > 0 ? (
-                    <List sx={{ width: '100%' }}>
+                    <List sx={{ width: '100%', p: 0 }}>
                         {Object.entries(assignmentsByTeam).map(([teamKey, teamData], index) => (
                             <React.Fragment key={teamKey}>
                                 <Box sx={{ mb: 2, mt: index > 0 ? 3 : 0 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                        <GroupIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                                        <Typography variant="subtitle1" fontWeight="bold">
-                                            {teamData.teamCode ? (
-                                                <>
-                                                    <Chip 
-                                                        label={teamData.teamCode} 
-                                                        color="primary" 
-                                                        size="small" 
-                                                        sx={{ mr: 1, fontWeight: 'bold' }} 
-                                                    />
-                                                    {teamData.teamName}
-                                                </>
-                                            ) : (
-                                                teamData.teamName
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        alignItems: isMobile ? 'flex-start' : 'center', 
+                                        mb: 1,
+                                        flexDirection: isMobile ? 'column' : 'row'
+                                    }}>
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center',
+                                            mb: isMobile ? 1 : 0
+                                        }}>
+                                            <GroupIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                                            {teamData.teamCode && (
+                                                <Chip 
+                                                    label={teamData.teamCode} 
+                                                    color="primary" 
+                                                    size="small" 
+                                                    sx={{ mr: 1, fontWeight: 'bold' }} 
+                                                />
                                             )}
+                                        </Box>
+                                        <Typography variant="subtitle1" fontWeight="bold">
+                                            {teamData.teamName}
                                         </Typography>
                                     </Box>
                                     
-                                    <Box sx={{ pl: 4, mb: 2 }}>
+                                    <Box sx={{ pl: { xs: 2, sm: 4 }, mb: 2 }}>
                                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                             Assigned Judges:
                                         </Typography>
@@ -355,7 +439,7 @@ const AdminAccessManagement = () => {
                                                             display: 'flex', 
                                                             justifyContent: 'space-between',
                                                             alignItems: 'center',
-                                                            p: 1,
+                                                            p: { xs: 1, sm: 2 },
                                                             borderRadius: 1,
                                                             border: `1px solid ${theme.palette.divider}`,
                                                             '&:hover': {

@@ -598,7 +598,7 @@ const HomePage = () => {
                             </Typography>
                             
                             <Typography variant="body2" color="text.secondary">
-                                © {new Date().getFullYear()} Crafted with ❤️ in Bengaluru
+                            © {new Date().getFullYear()} | Developed with ❤️ by OPQTech in Bengaluru
                             </Typography>
                         </Box>
                     </Container>

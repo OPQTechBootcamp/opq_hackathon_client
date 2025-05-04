@@ -30,8 +30,11 @@ import {
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import StarIcon from "@mui/icons-material/Star";
+import FileDownloadIcon from "@mui/icons-material/FileDownload"; // Added for export button
 import apiInstance from "../utils/apiInstance";
 import { getToken } from "../utils/tokenUtils";
+// Import SheetJS library for Excel export
+import * as XLSX from 'xlsx';
 
 const authHeader = () => ({
   headers: { Authorization: `Bearer ${getToken()}` },
@@ -60,6 +63,7 @@ const AdminResultsScreen = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [activeGroup, setActiveGroup] = useState("all");
+  const [exportLoading, setExportLoading] = useState(false); // State for export loading indicator
 
   // Extract unique team groups
   const getTeamGroups = () => {
@@ -148,6 +152,120 @@ const AdminResultsScreen = () => {
 
   const filteredAndSortedTeams = getFilteredAndSortedTeams();
 
+  // Function to export data to Excel
+  const exportToExcel = () => {
+    setExportLoading(true);
+    
+    try {
+      // Prepare data for export
+      const exportData = filteredAndSortedTeams.map((team, index) => {
+        // Parse rounds and judges
+        const rounds = team.rounds ? team.rounds.split(',').map(r => r.trim()).join(', ') : 'None';
+        const judges = team.judge_names ? team.judge_names.split(',').map(j => j.trim()).join(', ') : 'Not Assigned';
+        
+        return {
+          'Rank': index + 1,
+          'Team Code': team.team_code,
+          'Team Name': team.team_name,
+          'Problem Statement': team.problem_statement_title,
+          'Rating': getDisplayRating(team.average_rating),
+          'Rounds Evaluated': rounds,
+          'Judges': judges
+        };
+      });
+      
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 7 },    // Rank
+        { wch: 15 },   // Team Code
+        { wch: 30 },   // Team Name
+        { wch: 40 },   // Problem Statement
+        { wch: 10 },   // Rating
+        { wch: 20 },   // Rounds Evaluated
+        { wch: 40 },   // Judges
+      ];
+      worksheet['!cols'] = columnWidths;
+      
+      // Create workbook and add the worksheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Hackathon Leaderboard');
+      
+      // Generate Excel file name with current date
+      const date = new Date();
+      const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const fileName = `Hackathon_Leaderboard_${activeGroup !== 'all' ? `Group_${activeGroup}_` : ''}${formattedDate}.xlsx`;
+      
+      // Export to file
+      XLSX.writeFile(workbook, fileName);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export data. Please try again.");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Function to export team details to Excel
+  const exportTeamDetailsToExcel = () => {
+    if (evaluationDetails.length === 0) return;
+    
+    try {
+      // Prepare data for export
+      const exportData = evaluationDetails.map((evalItem) => {
+        return {
+          'Round': `R${evalItem.round_number}`,
+          'Judge': evalItem.judge_name,
+          'Total Score': evalItem.total_score,
+          'Innovation': evalItem.innovation,
+          'Technical': evalItem.technical,
+          'Relevance': evalItem.relevance,
+          'Feasibility': evalItem.feasibility,
+          'Design': evalItem.design,
+          'Collaboration': evalItem.collaboration,
+          'Presentation': evalItem.presentation,
+          'Bonus': evalItem.bonus,
+          'Comments': evalItem.comment || "No comment provided."
+        };
+      });
+      
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Set column widths
+      const columnWidths = [
+        { wch: 7 },    // Round
+        { wch: 20 },   // Judge
+        { wch: 12 },   // Total Score
+        { wch: 12 },   // Innovation
+        { wch: 12 },   // Technical
+        { wch: 12 },   // Relevance
+        { wch: 12 },   // Feasibility
+        { wch: 12 },   // Design
+        { wch: 12 },   // Collaboration
+        { wch: 12 },   // Presentation
+        { wch: 12 },   // Bonus
+        { wch: 50 },   // Comments
+      ];
+      worksheet['!cols'] = columnWidths;
+      
+      // Create workbook and add the worksheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Evaluation Details');
+      
+      // Generate Excel file name
+      const fileName = `${selectedTeam.team_code}_${selectedTeam.team_name}_Evaluation_Details.xlsx`;
+      
+      // Export to file
+      XLSX.writeFile(workbook, fileName);
+    } catch (error) {
+      console.error("Error exporting team details to Excel:", error);
+      alert("Failed to export data. Please try again.");
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
@@ -156,15 +274,32 @@ const AdminResultsScreen = () => {
             <Typography variant="h5" color="inherit" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
               Hackathon Leaderboard
             </Typography>
-            <Tooltip title="Refresh Leaderboard">
-              <IconButton
-                onClick={handleRefresh}
-                color="primary"
-                disabled={loading}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {/* Excel Export Button */}
+              <Tooltip title="Export to Excel">
+                <span>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<FileDownloadIcon />}
+                    onClick={exportToExcel}
+                    disabled={loading || exportLoading || filteredAndSortedTeams.length === 0}
+                    sx={{ borderRadius: 6, mr: 1 }}
+                  >
+                    {exportLoading ? "Exporting..." : "Export Excel"}
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip title="Refresh Leaderboard">
+                <IconButton
+                  onClick={handleRefresh}
+                  color="primary"
+                  disabled={loading}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Toolbar>
         </AppBar>
         
@@ -355,13 +490,33 @@ const AdminResultsScreen = () => {
             backgroundColor: theme.palette.primary.main, 
             color: 'white',
             display: 'flex',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}>
             <Typography variant="h6">
               {loadingDetails
                 ? "Loading Evaluation Details..."
                 : `Evaluation Details for ${selectedTeam?.team_name} (${selectedTeam?.team_code})`}
             </Typography>
+            {!loadingDetails && evaluationDetails.length > 0 && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                startIcon={<FileDownloadIcon />}
+                onClick={exportTeamDetailsToExcel}
+                sx={{ 
+                  borderRadius: 6,
+                  backgroundColor: theme.palette.common.white,
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: theme.palette.grey[100]
+                  }
+                }}
+              >
+                Export Details
+              </Button>
+            )}
           </DialogTitle>
           <DialogContent sx={{ mt: 2, p: 3 }}>
             {loadingDetails ? (

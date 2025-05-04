@@ -4,18 +4,28 @@ import { fetchAssignedTeams, submitEvaluation, fetchAllTeamsRatings, clearStatus
 import {
   Container, Typography, Card, CardContent, Button, Box, Alert, CircularProgress,
   Tabs, Tab, MenuItem, Select, FormControl, InputLabel, Grid, Chip, Divider,
-  Paper, Stack, useTheme
+  Paper, Stack, useTheme, useMediaQuery, styled
 } from '@mui/material';
 import EvaluationFormModal from '../components/EvaluationFormModal';
 import AllTeamsRatingsTable from '../components/AllTeamsRatingsTable';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 
+// Styled components for responsive tabs
+const ResponsiveTab = styled(Tab)(({ theme }) => ({
+  [theme.breakpoints.down('sm')]: {
+    minWidth: 'auto',
+    padding: theme.spacing(1),
+    fontSize: theme.typography.pxToRem(12),
+  },
+}));
+
 const JudgeDashboard = () => {
   const dispatch = useDispatch();
   const { assignedTeams, loading, error, success } = useSelector((state) => state.judgeDashboard);
   const judge = useSelector((state) => state.auth.user);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -64,7 +74,7 @@ const JudgeDashboard = () => {
     setOpenModal(true);
   };
 
-  const handleFormSubmit = (evaluationData) => {
+  const handleFormSubmit = async (evaluationData) => {
     if (selectedTeam && judge?.id && selectedRound) {
       const evaluationWithIds = {
         ...evaluationData,
@@ -72,8 +82,19 @@ const JudgeDashboard = () => {
         judge_id: judge.id,
         round_id: selectedRound,
       };
-      dispatch(submitEvaluation(evaluationWithIds));
-      setOpenModal(false);
+      
+      try {
+        // Wait for the submission to complete
+        await dispatch(submitEvaluation(evaluationWithIds)).unwrap();
+        
+        // Only fetch updated data after successful submission
+        dispatch(fetchAllTeamsRatings());
+        dispatch(fetchAssignedTeams(judge.id));
+        setOpenModal(false);
+      } catch (error) {
+        console.error("Failed to submit evaluation:", error);
+        // Handle error if needed
+      }
     }
   };
 
@@ -105,7 +126,7 @@ const JudgeDashboard = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Judge Dashboard
@@ -135,7 +156,7 @@ const JudgeDashboard = () => {
       <Paper 
         elevation={3} 
         sx={{ 
-          p: 3, 
+          p: { xs: 2, sm: 3 }, 
           mb: 5, 
           borderRadius: 2,
           background: `linear-gradient(to right, ${theme.palette.primary.light}22, ${theme.palette.background.paper})` 
@@ -148,7 +169,7 @@ const JudgeDashboard = () => {
           </Typography>
         </Box>
 
-        {/* Team Groups Tabs */}
+        {/* Team Groups Tabs - Enhanced for Mobile */}
         {teamGroups.length > 0 ? (
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs 
@@ -156,14 +177,15 @@ const JudgeDashboard = () => {
               onChange={handleGroupChange}
               variant="scrollable"
               scrollButtons="auto"
+              allowScrollButtonsMobile
               textColor="primary"
               indicatorColor="primary"
               sx={{ mb: 3 }}
             >
               {teamGroups.map((group) => (
-                <Tab 
+                <ResponsiveTab 
                   key={group} 
-                  label={`Group ${group}`} 
+                  label={isMobile ? `Grp ${group}` : `Group ${group}`} 
                   value={group} 
                   sx={{ 
                     fontWeight: 'bold',
@@ -180,7 +202,7 @@ const JudgeDashboard = () => {
         )}
 
         {/* Teams in Selected Group */}
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {filteredTeams.map((team) => {
             const progress = getTeamProgress(team);
             
@@ -197,7 +219,7 @@ const JudgeDashboard = () => {
                     },
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
+                  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     {/* Team Code - Highlighted */}
                     <Box 
                       sx={{ 
@@ -210,6 +232,7 @@ const JudgeDashboard = () => {
                         borderRadius: 2,
                         boxShadow: 1,
                         fontWeight: 'bold',
+                        fontSize: isMobile ? '0.8rem' : 'inherit'
                       }}
                     >
                       Team Code: {team.team_code}
@@ -217,7 +240,7 @@ const JudgeDashboard = () => {
                     
                     <Box sx={{ mb: 2 }}>
                       <Typography 
-                        variant="h6" 
+                        variant={isMobile ? "subtitle1" : "h6"} 
                         fontWeight="bold"
                         sx={{ 
                           display: 'flex', 
@@ -228,7 +251,8 @@ const JudgeDashboard = () => {
                         <SchoolIcon 
                           sx={{ 
                             mr: 1, 
-                            color: theme.palette.primary.main 
+                            color: theme.palette.primary.main,
+                            fontSize: isMobile ? '1.1rem' : 'inherit'
                           }} 
                         />
                         {team.team_name}
@@ -237,6 +261,9 @@ const JudgeDashboard = () => {
                       <Typography 
                         variant="subtitle2" 
                         color="text.secondary"
+                        sx={{
+                          fontSize: isMobile ? '0.7rem' : 'inherit'
+                        }}
                       >
                         {team.problem_statement_title}
                       </Typography>
@@ -281,6 +308,7 @@ const JudgeDashboard = () => {
                         value=""
                         onChange={(e) => handleRoundSelect(team, e.target.value)}
                         sx={{ borderRadius: 2 }}
+                        size={isMobile ? "small" : "medium"}
                       >
                         {team.rounds && team.rounds.map((round) => (
                           <MenuItem 
@@ -310,7 +338,7 @@ const JudgeDashboard = () => {
       </Paper>
 
       {/* All Teams Ratings */}
-      <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2 }}>
         <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
           All Teams Ratings
         </Typography>

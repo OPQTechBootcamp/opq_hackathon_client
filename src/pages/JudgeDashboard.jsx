@@ -185,7 +185,7 @@ const JudgeDashboard = () => {
               {teamGroups.map((group) => (
                 <ResponsiveTab 
                   key={group} 
-                  label={isMobile ? `Grp ${group}` : `Group ${group}`} 
+                  label={isMobile ? `Grp ${group}` : `Series ${group}`} 
                   value={group} 
                   sx={{ 
                     fontWeight: 'bold',

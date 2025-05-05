@@ -574,35 +574,7 @@ const HomePage = () => {
                 </Container>
 
                 {/* Footer */}
-                <Box 
-                    component="footer" 
-                    sx={{ 
-                        mt: 8, 
-                        py: 6, 
-                        backgroundColor: 'white',
-                        borderTop: '1px solid',
-                        borderColor: 'rgba(226, 232, 240, 1)',
-                    }}
-                >
-                    <Container maxWidth="lg">
-                        <Box 
-                            sx={{
-                                display: 'flex',
-                                flexDirection: { xs: 'column', sm: 'row' },
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                            }}
-                        >
-                            <Typography variant="h6" color="text.primary" sx={{ mb: { xs: 2, sm: 0 } }}>
-                                Hackathon Platform
-                            </Typography>
-                            
-                            <Typography variant="body2" color="text.secondary">
-                            © {new Date().getFullYear()} | Developed with ❤️ by OPQTech in Bengaluru
-                            </Typography>
-                        </Box>
-                    </Container>
-                </Box>
+
                 
                 {/* Notification for when hackathon starts */}
                 <Snackbar 

@@ -196,7 +196,7 @@ const AllTeamsRatingsTable = () => {
                     {teamGroups.map((group) => (
                         <Tab 
                             key={group} 
-                            label={group === 'all' ? 'All Groups' : `Group ${group}`} 
+                            label={group === 'all' ? 'All Groups' : `Series ${group}`} 
                             value={group}
                             sx={{ 
                                 fontWeight: 'bold',
@@ -580,7 +580,7 @@ const AllTeamsRatingsTable = () => {
                                                                     color: getRatingColor(evaluation.total_score)
                                                                 }}
                                                             >
-                                                                {evaluation.total_score} / 80
+                                                                {evaluation.total_score} / 75
                                                             </Typography>
                                                         </Box>
                                                         

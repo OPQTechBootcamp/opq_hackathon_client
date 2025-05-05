@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ProtectedTeamRoute from "./components/ProtectedTeamRoute";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import Loading from "./components/Loading";
 import Unauthorized from "./components/Unauthorized";
 import RoundManagementPage from "./pages/RoundManagementPage";
@@ -27,6 +28,7 @@ const AdminAccessManagement = lazy(() =>
 );
 const AdminUsersScreen = lazy(() => import("./pages/AdminUsersScreen"));
 const AdminHackathonSchedulePage = lazy(() => import("./pages/AdminHackathonSchedulePage"));
+const ImportantLinks = lazy(() => import("./pages/ImportantLinks"));
 const AdminResultsScreen = lazy(() => import("./pages/AdminResultsScreen"));
 const JudgeDashboard = lazy(() => import("./pages/JudgeDashboard"));
 const NotFound = lazy(() => import("./components/NotFound"));
@@ -42,6 +44,7 @@ const App = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/team/register" element={<TeamRegisterPage />} />
           <Route path="/team/login" element={<TeamLoginPage />} />
+          <Route path="/important-links" element={<ImportantLinks />} />
           <Route
             path="/teamDashboard"
             element={
@@ -145,6 +148,7 @@ const App = () => {
           <Route path="/unauthorized" element={<Unauthorized />} />
         </Routes>
       </Suspense>
+      <Footer />
     </BrowserRouter>
   );
 };

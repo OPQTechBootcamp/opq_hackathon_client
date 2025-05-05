@@ -21,49 +21,57 @@ const criteriaList = [
     key: 'innovation', 
     label: 'Innovation & Creativity', 
     description: 'Uniqueness of the idea and originality.',
-    icon: <LightbulbIcon />
+    icon: <LightbulbIcon />,
+    maxScore: 10
   },
   { 
     key: 'technical', 
     label: 'Technical Implementation', 
     description: 'Use of AI/ML, backend/frontend quality, APIs, models.',
-    icon: <CodeIcon />
+    icon: <CodeIcon />,
+    maxScore: 10
   },
   { 
     key: 'relevance', 
     label: 'Problem Relevance', 
     description: 'How well does the project address a real-world problem?',
-    icon: <TipsAndUpdatesIcon />
+    icon: <TipsAndUpdatesIcon />,
+    maxScore: 10
   },
   { 
     key: 'feasibility', 
     label: 'Feasibility & Scalability', 
     description: 'Is it implementable and scalable?',
-    icon: <AssignmentIcon />
+    icon: <AssignmentIcon />,
+    maxScore: 10
   },
   { 
     key: 'design', 
     label: 'UI/UX & Design', 
     description: 'User-friendliness and visual appeal.',
-    icon: <PaletteIcon />
+    icon: <PaletteIcon />,
+    maxScore: 10
   },
   { 
     key: 'collaboration', 
     label: 'Team Collaboration', 
     description: 'Teamwork and communication.',
-    icon: <GroupsIcon />
+    icon: <GroupsIcon />,
+    maxScore: 10
   },
   { 
     key: 'presentation', 
     label: 'Presentation & Demo', 
     description: 'Clarity, storytelling, technical depth during pitch.',
-    icon: <PresentToAllIcon />
+    icon: <PresentToAllIcon />,
+    maxScore: 10
   },
   { 
     key: 'bonus', 
     label: 'Bonus Points', 
     description: 'Any surprise innovation or standout features.',
-    icon: <EmojiEventsIcon />
+    icon: <EmojiEventsIcon />,
+    maxScore: 5
   }
 ];
 
@@ -90,8 +98,11 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
   }, [open, team]);
 
   const handleScoreChange = (key, value) => {
-    // Only allow numbers between 0-10
-    if (value === '' || (Number(value) >= 0 && Number(value) <= 10)) {
+    const criterion = criteriaList.find(c => c.key === key);
+    const maxScore = criterion ? criterion.maxScore : 10;
+    
+    // Only allow valid numbers for the specific criterion
+    if (value === '' || (Number(value) >= 0 && Number(value) <= maxScore)) {
       setScores({ ...scores, [key]: value });
       // Clear any error for this field
       if (errors[key]) {
@@ -122,8 +133,8 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
         newErrors[criterion.key] = 'Required';
       } else {
         const numScore = Number(score);
-        if (isNaN(numScore) || numScore < 0 || numScore > 10) {
-          newErrors[criterion.key] = 'Score must be 0-10';
+        if (isNaN(numScore) || numScore < 0 || numScore > criterion.maxScore) {
+          newErrors[criterion.key] = `Score must be 0-${criterion.maxScore}`;
         }
       }
     });
@@ -148,7 +159,7 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
         roundId: roundId,
         scores,
         comments,
-        totalScore: Object.values(scores).reduce((sum, score) => sum + Number(score || 0), 0)
+        totalScore: calculateTotalScore()
       };
       
       onSubmit(evaluationData);
@@ -166,6 +177,11 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
       const numScore = Number(score || 0);
       return isNaN(numScore) ? sum : sum + numScore;
     }, 0);
+  };
+  
+  // Calculate maximum possible total
+  const calculateMaxPossibleScore = () => {
+    return criteriaList.reduce((sum, criterion) => sum + criterion.maxScore, 0);
   };
 
   return (
@@ -225,7 +241,8 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
             Evaluation Instructions
           </Typography>
           <Typography variant="body2">
-            Rate each criterion on a scale of 0-10. Hover over the info icon for criterion descriptions.
+            Rate each criterion on the specified scale. Most criteria range from 0-10, while 
+            Bonus Points range from 0-5. Hover over the info icon for detailed descriptions.
             All fields are required before submission.
           </Typography>
         </Paper>
@@ -235,16 +252,18 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
           {criteriaList.map((criterion) => (
             <Grid item xs={12} sm={6} key={criterion.key}>
               <Paper
-                elevation={1}
+                elevation={criterion.key === 'bonus' ? 2 : 1}
                 sx={{
-                  p: 1,
+                  p: 2,
                   borderRadius: 2,
-                  height: '100%'
+                  height: '100%',
+                  border: criterion.key === 'bonus' ? `1px solid ${theme.palette.warning.light}` : 'none',
+                  bgcolor: criterion.key === 'bonus' ? theme.palette.warning.light + '15' : 'white'
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Box sx={{ 
-                    color: theme.palette.primary.main, 
+                    color: criterion.key === 'bonus' ? theme.palette.warning.main : theme.palette.primary.main, 
                     display: 'flex', 
                     mr: 1 
                   }}>
@@ -263,9 +282,15 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
                     </IconButton>
                   </Tooltip>
                 </Box>
+                
+                {criterion.key === 'bonus' && (
+                  <Typography variant="caption" color="warning.dark" sx={{ display: 'block', mb: 1 }}>
+                    Special category: Range 0-5 points
+                  </Typography>
+                )}
 
                 <TextField
-                  label="Score (0-10)"
+                  label={`Score (0-${criterion.maxScore})`}
                   value={scores[criterion.key]}
                   onChange={(e) => handleScoreChange(criterion.key, e.target.value)}
                   type="number"
@@ -274,7 +299,7 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
                   variant="outlined"
                   inputProps={{ 
                     min: 0, 
-                    max: 10, 
+                    max: criterion.maxScore, 
                     step: 1 
                   }}
                   error={!!errors[criterion.key]}
@@ -283,9 +308,20 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
                   InputProps={{
                     endAdornment: (
                       <InputAdornment position="end">
-                        /10
+                        /{criterion.maxScore}
                       </InputAdornment>
                     ),
+                    sx: {
+                      ...(criterion.key === 'bonus' && {
+                        color: theme.palette.warning.dark,
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.warning.main,
+                        },
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: theme.palette.warning.dark,
+                        },
+                      })
+                    }
                   }}
                 />
               </Paper>
@@ -324,7 +360,7 @@ const EvaluationFormModal = ({ open, handleClose, team, roundId, onSubmit }) => 
               {calculateTotalScore()}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-              / {criteriaList.length * 10}
+              / {calculateMaxPossibleScore()}
             </Typography>
           </Box>
         </Paper>

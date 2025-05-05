@@ -157,13 +157,13 @@ const AdminResultsScreen = () => {
   const getRatingLabel = (rating) => {
     if (!rating || rating === "NA") return "";
     const numRating = parseFloat(rating);
-    if (numRating >= 9) return 'Outstanding';
-    if (numRating >= 8) return 'Excellent';
-    if (numRating >= 7) return 'Very Good';
-    if (numRating >= 6) return 'Good';
-    if (numRating >= 5) return 'Average';
-    if (numRating >= 4) return 'Fair';
-    if (numRating >= 3) return 'Poor';
+    if (numRating >= 70) return 'Outstanding';
+    if (numRating >= 60) return 'Excellent';
+    if (numRating >= 55) return 'Very Good';
+    if (numRating >= 50) return 'Good';
+    if (numRating >= 45) return 'Average';
+    if (numRating >= 40) return 'Fair';
+    if (numRating >= 35) return 'Poor';
     return 'Needs Improvement';
   };
 
@@ -457,7 +457,7 @@ const AdminResultsScreen = () => {
             {teamGroups.map((group) => (
               <Tab 
                 key={group} 
-                label={group === 'all' ? 'All Groups' : `Group ${group}`} 
+                label={group === 'all' ? 'All Series' : `Series ${group}`} 
                 value={group}
                 sx={{ 
                   fontWeight: 'bold',
@@ -748,7 +748,7 @@ const AdminResultsScreen = () => {
                                 color: getRatingColor(evalItem.total_score)
                               }}
                             >
-                              {evalItem.total_score} / 10
+                              {evalItem.total_score} / 75
                             </Typography>
                             <Chip 
                               label={getRatingLabel(evalItem.total_score)} 

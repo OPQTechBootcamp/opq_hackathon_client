@@ -516,7 +516,6 @@ const JudgeRegistration = () => {
                 >
                   <MenuItem value="Veg">Veg</MenuItem>
                   <MenuItem value="Jain">Jain</MenuItem>
-                  <MenuItem value="Non-Veg">Non-Veg</MenuItem>
                 </Select>
                 {errors.dietary_preference && (
                   <FormHelperText>{errors.dietary_preference}</FormHelperText>

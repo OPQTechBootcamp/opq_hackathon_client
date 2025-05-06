@@ -66,7 +66,7 @@ const theme = createTheme({
   },
 });
 
-const roles = ["Admin", "Judge", "Coordinator"];
+const roles = ["Admin", "Judge", "Faculty"];
 
 const RegisterUser = () => {
   const dispatch = useDispatch();

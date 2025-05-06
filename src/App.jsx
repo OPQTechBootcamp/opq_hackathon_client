@@ -22,15 +22,20 @@ const ProblemStatementUpload = lazy(() =>
   import("./pages/ProblemStatementUpload")
 );
 const CoordinatorDashboard = lazy(() => import("./pages/CoordinatorDashboard"));
+const FacultyDashboard = lazy(() => import("./pages/FacultyDashboard"));
 const AdminTeamsPage = lazy(() => import("./pages/AdminTeamsPage"));
 const AdminAccessManagement = lazy(() =>
   import("./pages/AdminAccessManagement")
 );
 const AdminUsersScreen = lazy(() => import("./pages/AdminUsersScreen"));
-const AdminHackathonSchedulePage = lazy(() => import("./pages/AdminHackathonSchedulePage"));
+const AdminHackathonSchedulePage = lazy(() =>
+  import("./pages/AdminHackathonSchedulePage")
+);
 const ImportantLinks = lazy(() => import("./pages/ImportantLinks"));
 const AdminResultsScreen = lazy(() => import("./pages/AdminResultsScreen"));
 const JudgeDashboard = lazy(() => import("./pages/JudgeDashboard"));
+const JudgeRegistration = lazy(() => import("./pages/JudgeRegistration"));
+const JudgeManagement = lazy(() => import("./pages/JudgeManagement"));
 const NotFound = lazy(() => import("./components/NotFound"));
 
 const App = () => {
@@ -43,6 +48,7 @@ const App = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/team/register" element={<TeamRegisterPage />} />
+          <Route path="/judge/register" element={<JudgeRegistration />} />
           <Route path="/team/login" element={<TeamLoginPage />} />
           <Route path="/important-links" element={<ImportantLinks />} />
           <Route
@@ -59,6 +65,14 @@ const App = () => {
             element={
               <ProtectedRoute roles={["admin"]}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />{" "}
+          <Route
+            path="/admin/judgeManagement"
+            element={
+              <ProtectedRoute roles={["admin", "coordinator", "faculty"]}>
+                <JudgeManagement />
               </ProtectedRoute>
             }
           />
@@ -81,7 +95,7 @@ const App = () => {
           <Route
             path="/user-teams"
             element={
-              <ProtectedRoute roles={["admin", "coordinator"]}>
+              <ProtectedRoute roles={["admin", "coordinator", "faculty"]}>
                 <AdminUsersScreen />
               </ProtectedRoute>
             }
@@ -107,6 +121,13 @@ const App = () => {
             element={
               <ProtectedRoute roles={["coordinator"]}>
                 <CoordinatorDashboard />
+              </ProtectedRoute>
+            }
+          />{" "}          <Route
+            path="/faculty/dashboard"
+            element={
+              <ProtectedRoute roles={["faculty"]}>
+                <FacultyDashboard />
               </ProtectedRoute>
             }
           />{" "}

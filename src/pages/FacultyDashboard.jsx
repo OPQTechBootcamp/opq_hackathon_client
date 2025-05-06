@@ -12,12 +12,9 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import GavelIcon from "@mui/icons-material/Gavel";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
-import TimerIcon from "@mui/icons-material/Timer";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import GroupsIcon from "@mui/icons-material/Groups";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import DescriptionIcon from "@mui/icons-material/Description";
 import LinkIcon from "@mui/icons-material/Link";
 
 // Styled Components for enhanced UI
@@ -64,7 +61,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
   textAlign: "center",
 }));
 
-const AdminDashboard = () => {
+const FacultyDashboard = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down("sm"));
@@ -74,49 +71,41 @@ const AdminDashboard = () => {
     navigate("/admin/accessManagement");
   };
 
-  const navigateToRounds = () => {
-    navigate("/admin/round-management");
+  const navigateToSection = () => {
+    navigate("/coordinator/section-management");
   };
-
+  
   const navigateToTeams = () => {
     navigate("/user-teams");
   };
 
-  const navigateToScores = () => {
-    navigate("/admin/round-status");
-  };
-
-  const navigateToResults = () => {
-    navigate("/admin/results");
-  };
-  const navigateToProblemStatement = () => {
-    navigate("/admin/problem-statement");
-  };
   const navigateToImportantLinks = () => {
     navigate("/important-links");
-  };  
-  const navigateToJudgeApproval = () => {
+  };
+  
+  const navigateToJudgeList = () => {
     navigate("/admin/judgeManagement");
   };
+  
   const cardData = [
+    // {
+    //   title: "Judge Assignment",
+    //   subtitle: "Assign judges to teams",
+    //   icon: AssignmentIndIcon,
+    //   onClick: navigateToJudgeAssignment,
+    // },    
     {
-      title: "Judge Assignment",
-      subtitle: "Assign judges to teams",
-      icon: AssignmentIndIcon,
-      onClick: navigateToJudgeAssignment,
-    },    
-    {
-      title: "Judge Approval",
-      subtitle: "Review & approve judge applications",
-      icon: GavelIcon,
-      onClick: navigateToJudgeApproval,
+      title: "Judge Directory",
+      subtitle: "View judge information",
+      icon: FormatListBulletedIcon,
+      onClick: navigateToJudgeList,
     },
-    {
-      title: "Event Schedule",
-      subtitle: "Manage round timings",
-      icon: TimerIcon,
-      onClick: navigateToRounds,
-    },
+    // {
+    //     title: 'Section',
+    //     subtitle: 'Manage Team - Section assignment',
+    //     icon: SegmentIcon,
+    //     onClick: navigateToSection,
+    // },
     {
       title: "Teams",
       subtitle: "View participants and teams",
@@ -124,20 +113,8 @@ const AdminDashboard = () => {
       onClick: navigateToTeams,
     },
     {
-      title: "Results",
-      subtitle: "View and finalize results",
-      icon: EmojiEventsIcon,
-      onClick: navigateToResults,
-    },
-    {
-      title: "Problem Statement",
-      subtitle: "Manage hackathon challenges",
-      icon: DescriptionIcon,
-      onClick: navigateToProblemStatement,
-    },
-    {
       title: "Important Links",
-      subtitle: "Manage resource links",
+      subtitle: "Access event resources",
       icon: LinkIcon,
       onClick: navigateToImportantLinks,
     },
@@ -155,7 +132,7 @@ const AdminDashboard = () => {
   return (
     <StyledContainer maxWidth="lg">
       <StyledTypography variant="h4" component="h1" gutterBottom>
-        Admin Dashboard
+        Coordinator Dashboard
       </StyledTypography>
 
       <Grid container spacing={4}>
@@ -199,4 +176,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default FacultyDashboard;

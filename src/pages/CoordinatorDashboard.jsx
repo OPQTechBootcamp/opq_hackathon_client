@@ -12,9 +12,10 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import SecurityIcon from "@mui/icons-material/Security";
-import SegmentIcon from "@mui/icons-material/Segment";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import GroupsIcon from "@mui/icons-material/Groups";
+import LinkIcon from "@mui/icons-material/Link";
 
 // Styled Components for enhanced UI
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -66,27 +67,38 @@ const CoordinatorDashboard = () => {
   const isSm = useMediaQuery(theme.breakpoints.down("sm"));
   const isMd = useMediaQuery(theme.breakpoints.down("md"));
 
-  const navigateToJudges = () => {
+  const navigateToJudgeAssignment = () => {
     navigate("/admin/accessManagement");
   };
 
   const navigateToSection = () => {
     navigate("/coordinator/section-management");
   };
+  
   const navigateToTeams = () => {
     navigate("/user-teams");
   };
 
-  const navigateToTLinks = () => {
+  const navigateToImportantLinks = () => {
     navigate("/important-links");
   };
-
+  
+  const navigateToJudgeList = () => {
+    navigate("/admin/judgeManagement");
+  };
+  
   const cardData = [
     {
-      title: "Judges",
-      subtitle: "Manage judge access",
-      icon: SecurityIcon,
-      onClick: navigateToJudges,
+      title: "Judge Assignment",
+      subtitle: "Assign judges to teams",
+      icon: AssignmentIndIcon,
+      onClick: navigateToJudgeAssignment,
+    },    
+    {
+      title: "Judge Directory",
+      subtitle: "View judge information",
+      icon: FormatListBulletedIcon,
+      onClick: navigateToJudgeList,
     },
     // {
     //     title: 'Section',
@@ -95,16 +107,16 @@ const CoordinatorDashboard = () => {
     //     onClick: navigateToSection,
     // },
     {
-      title: "Users and Teams",
-      subtitle: "View teams and users",
+      title: "Teams",
+      subtitle: "View participants and teams",
       icon: GroupsIcon,
       onClick: navigateToTeams,
     },
     {
       title: "Important Links",
-      subtitle: "View and Manage Important Links",
-      icon: SegmentIcon,
-      onClick: navigateToTLinks,
+      subtitle: "Access event resources",
+      icon: LinkIcon,
+      onClick: navigateToImportantLinks,
     },
   ];
 

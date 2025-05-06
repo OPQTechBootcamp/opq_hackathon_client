@@ -127,9 +127,10 @@ const AdminUsersScreen = () => {
         { label: 'Admins', icon: <AdminIcon fontSize="small" />, roleFilter: 'admin' },
         { label: 'Judges', icon: <JudgeIcon fontSize="small" />, roleFilter: 'judge' },
         { label: 'Coordinators', icon: <CoordinatorIcon fontSize="small" />, roleFilter: 'coordinator' },
+        { label: 'Faculty', icon: <CoordinatorIcon fontSize="small" />, roleFilter: 'faculty' },
     ];
 
-    const visibleUserTabs = user.role === 'coordinator' ? userTabs.slice(2) : userTabs;
+    const visibleUserTabs = (user.role === 'coordinator' || user.role === 'faculty') ? userTabs.slice(2) : userTabs;
 
     const filteredUsers = users.filter((userItem) => {
         const matchesSearch =

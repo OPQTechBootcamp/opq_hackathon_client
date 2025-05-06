@@ -103,7 +103,7 @@ const Footer = () => {
             >
               <PhoneIcon sx={{ mr: 0.5, fontSize: 20 }} />
               <Typography variant="body2">
-                +91 9876543210
+              080-468-10558
               </Typography>
             </Link>
             

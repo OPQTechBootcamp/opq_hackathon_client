@@ -86,8 +86,17 @@ const AdminHackathonSchedulePage = () => {
               {schedules.map((s) => (
                 <TableRow key={s.id}>
                   <TableCell>{s.title}</TableCell>
-                  <TableCell>{new Date(s.start_datetime).toLocaleString()}</TableCell>
-                  <TableCell>{new Date(s.end_datetime).toLocaleString()}</TableCell>
+                  
+<TableCell>
+  {new Date(s.start_datetime).toLocaleString(undefined, {
+    timeZone: 'Asia/Kolkata' 
+  })}
+</TableCell>
+<TableCell>
+  {new Date(s.end_datetime).toLocaleString(undefined, {
+    timeZone: 'Asia/Kolkata' 
+  })}
+</TableCell>
                   <TableCell>{s.number_of_rounds}</TableCell>
                   <TableCell>
                     <Tooltip title="Time allowed for problem statement selection">

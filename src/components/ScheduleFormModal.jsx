@@ -47,10 +47,25 @@ const ScheduleFormModal = ({ open, onClose, initialData }) => {
   };
 
   const handleSubmit = async () => {
+    // Create a copy of the form data
+    const formData = { ...form };
+    
+    // Ensure dates are in ISO format
+    if (formData.start_datetime) {
+      // Make sure this is in ISO format with timezone (UTC)
+      const startDate = new Date(formData.start_datetime);
+      formData.start_datetime = startDate.toISOString();
+    }
+    
+    if (formData.end_datetime) {
+      const endDate = new Date(formData.end_datetime);
+      formData.end_datetime = endDate.toISOString();
+    }
+    
     if (initialData) {
-      dispatch(editSchedule({ id: initialData.id, data: form }));
+      dispatch(editSchedule({ id: initialData.id, data: formData }));
     } else {
-      dispatch(addSchedule(form));
+      dispatch(addSchedule(formData));
     }
     dispatch(fetchSchedules());
     onClose();

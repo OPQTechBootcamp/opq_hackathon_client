@@ -155,7 +155,7 @@ const ProblemStatementsTable = ({ page }) => {
           Authorization: `Bearer ${page === "team" ? getTeamToken() : getToken()}`
         }
       });
-      
+      setAccessBlocked(false);
       // Check if response includes the new structure
       if (res.data && res.data.problemStatements) {
         setProblemStatements(res.data.problemStatements);

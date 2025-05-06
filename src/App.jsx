@@ -37,6 +37,7 @@ const JudgeDashboard = lazy(() => import("./pages/JudgeDashboard"));
 const JudgeRegistration = lazy(() => import("./pages/JudgeRegistration"));
 const JudgeManagement = lazy(() => import("./pages/JudgeManagement"));
 const NotFound = lazy(() => import("./components/NotFound"));
+const JudgingCriteria = lazy(() => import("./components/JudgingCriteria"));
 
 const App = () => {
   return (
@@ -51,6 +52,7 @@ const App = () => {
           <Route path="/judge/register" element={<JudgeRegistration />} />
           <Route path="/team/login" element={<TeamLoginPage />} />
           <Route path="/important-links" element={<ImportantLinks />} />
+          <Route path="/judging-criteria" element={<JudgingCriteria />} />
           <Route
             path="/teamDashboard"
             element={

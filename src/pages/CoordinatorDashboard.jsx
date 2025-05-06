@@ -16,6 +16,7 @@ import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import GroupsIcon from "@mui/icons-material/Groups";
 import LinkIcon from "@mui/icons-material/Link";
+import GavelIcon from "@mui/icons-material/Gavel";
 
 // Styled Components for enhanced UI
 const StyledContainer = styled(Container)(({ theme }) => ({
@@ -82,7 +83,9 @@ const CoordinatorDashboard = () => {
   const navigateToImportantLinks = () => {
     navigate("/important-links");
   };
-  
+  const navigateToJudgingCriteria= () => {
+    navigate("/judging-criteria");
+  };
   const navigateToJudgeList = () => {
     navigate("/admin/judgeManagement");
   };
@@ -118,6 +121,12 @@ const CoordinatorDashboard = () => {
       icon: LinkIcon,
       onClick: navigateToImportantLinks,
     },
+    {
+      title: "Hackathon Judging Criteria",
+      subtitle: "",
+      icon: GavelIcon,
+      onClick: navigateToJudgingCriteria,
+    }
   ];
 
   let gridCols;

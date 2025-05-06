@@ -19,8 +19,14 @@ import {
   Alert,
   Card,
   CardContent,
-  CardMedia
+  CardMedia,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import GavelIcon from '@mui/icons-material/Gavel';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -28,6 +34,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import apiInstance from "../utils/apiInstance";
 
 const JudgeRegistration = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -45,6 +52,15 @@ const JudgeRegistration = () => {
     preferred_time_slot: '',
     dietary_preference: ''
   });
+
+  // State for the modal
+  const [openModal, setOpenModal] = useState(false);
+  const [modalData, setModalData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [modalErrors, setModalErrors] = useState({});
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,26 +86,31 @@ const JudgeRegistration = () => {
     }
   };
 
+  // Handle modal input changes
+  const handleModalChange = (e) => {
+    const { name, value } = e.target;
+    setModalData({
+      ...modalData,
+      [name]: value
+    });
+    
+    // Clear error when field is modified
+    if (modalErrors[name]) {
+      setModalErrors({
+        ...modalErrors,
+        [name]: ''
+      });
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
+    // Email validation removed as it will be collected in the modal
     
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
+    // Password validation removed as it will be collected in the modal
     
     if (!formData.whatsapp_number.trim()) {
       newErrors.whatsapp_number = 'WhatsApp number is required';
@@ -125,21 +146,61 @@ const JudgeRegistration = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const validateModalData = () => {
+    const newErrors = {};
+    
+    if (!modalData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(modalData.email)) {
+      newErrors.email = 'Email is invalid';
+    }
+    
+    if (!modalData.password) {
+      newErrors.password = 'Password is required';
+    } else if (modalData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (modalData.password !== modalData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setModalErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
     
+    // Open the modal for email and password collection
+    setOpenModal(true);
+  };
+
+  const handleModalSubmit = async () => {
+    if (!validateModalData()) return;
+    
     setIsSubmitting(true);
     
     try {
-      const response = await apiInstance.post('/judge/register', formData);
+      // Combine form data with modal data
+      const finalFormData = {
+        ...formData,
+        email: modalData.email,
+        password: modalData.password
+      };
+      
+      const response = await apiInstance.post('/judge/register', finalFormData);
       
       setSnackbar({
         open: true,
-        message: 'Registration successful! Your application is pending approval.',
+        message: 'Registration successful! Redirecting to login page...',
         severity: 'success'
       });
+      
+      // Close the modal
+      setOpenModal(false);
       
       // Reset form
       setFormData({
@@ -160,6 +221,11 @@ const JudgeRegistration = () => {
         dietary_preference: ''
       });
       
+      // Navigate to login page after a short delay
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
     } catch (error) {
       console.error('Registration error:', error);
       
@@ -168,9 +234,22 @@ const JudgeRegistration = () => {
         message: error.response?.data?.message || 'Registration failed. Please try again.',
         severity: 'error'
       });
+      
+      // Close the modal on error
+      setOpenModal(false);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setModalData({
+      email: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setModalErrors({});
   };
 
   const handleCloseSnackbar = () => {
@@ -257,7 +336,7 @@ const JudgeRegistration = () => {
           </CardContent>
         </Card>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleFormSubmit}>
           <Typography variant="h6" gutterBottom sx={{ mt: 4, mb: 2 }}>
             Personal Information
           </Typography>
@@ -273,51 +352,6 @@ const JudgeRegistration = () => {
                 onChange={handleChange}
                 error={!!errors.name}
                 helperText={errors.name}
-                variant="outlined"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                error={!!errors.email}
-                helperText={errors.email}
-                variant="outlined"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Password"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                error={!!errors.password}
-                helperText={errors.password}
-                variant="outlined"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                required
-                fullWidth
-                label="Confirm Password"
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={!!errors.confirmPassword}
-                helperText={errors.confirmPassword}
                 variant="outlined"
               />
             </Grid>
@@ -543,6 +577,66 @@ const JudgeRegistration = () => {
           </Box>
         </form>
       </Paper>
+
+      {/* Registration Modal */}
+      <Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>Complete Your Registration</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please provide your email and create a password to complete the registration.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="email"
+            label="Email Address"
+            type="email"
+            fullWidth
+            variant="outlined"
+            value={modalData.email}
+            onChange={handleModalChange}
+            error={!!modalErrors.email}
+            helperText={modalErrors.email}
+            sx={{ mt: 2 }}
+          />
+          <TextField
+            margin="dense"
+            name="password"
+            label="Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={modalData.password}
+            onChange={handleModalChange}
+            error={!!modalErrors.password}
+            helperText={modalErrors.password}
+          />
+          <TextField
+            margin="dense"
+            name="confirmPassword"
+            label="Confirm Password"
+            type="password"
+            fullWidth
+            variant="outlined"
+            value={modalData.confirmPassword}
+            onChange={handleModalChange}
+            error={!!modalErrors.confirmPassword}
+            helperText={modalErrors.confirmPassword}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseModal} color="primary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleModalSubmit} 
+            color="primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Submitting...' : 'Register'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}

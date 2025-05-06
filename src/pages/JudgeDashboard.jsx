@@ -4,12 +4,23 @@ import { fetchAssignedTeams, submitEvaluation, fetchAllTeamsRatings, clearStatus
 import {
   Container, Typography, Card, CardContent, Button, Box, Alert, CircularProgress,
   Tabs, Tab, MenuItem, Select, FormControl, InputLabel, Grid, Chip, Divider,
-  Paper, Stack, useTheme, useMediaQuery, styled
+  Paper, Stack, useTheme, useMediaQuery, styled, Dialog, DialogContent, 
+  DialogTitle, IconButton, AppBar, Toolbar, Collapse
 } from '@mui/material';
 import EvaluationFormModal from '../components/EvaluationFormModal';
 import AllTeamsRatingsTable from '../components/AllTeamsRatingsTable';
 import SchoolIcon from '@mui/icons-material/School';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import PersonIcon from '@mui/icons-material/Person';
+import CloseIcon from '@mui/icons-material/Close';
+import GavelIcon from '@mui/icons-material/Gavel';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+
+// Import the JudgeProfile component
+import JudgeProfile from '../components/JudgeProfile';
+// Import the JudgingCriteria component
+import JudgingCriteria from '../components/JudgingCriteria';
 
 // Styled components for responsive tabs
 const ResponsiveTab = styled(Tab)(({ theme }) => ({
@@ -31,6 +42,12 @@ const JudgeDashboard = () => {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedRound, setSelectedRound] = useState(null);
   const [activeGroup, setActiveGroup] = useState(null);
+  
+  // State for profile dialog
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  
+  // State for judging criteria section visibility
+  const [showCriteria, setShowCriteria] = useState(true);
   
   // Extract team groups from the team_code (e.g., "A_1" -> "A", "C_1" -> "C")
   const extractTeamGroup = (teamCode) => {
@@ -125,14 +142,99 @@ const JudgeDashboard = () => {
     return round.evaluated || false;
   };
 
+  // Handle opening and closing profile dialog
+  const handleOpenProfileDialog = () => {
+    setProfileDialogOpen(true);
+  };
+
+  const handleCloseProfileDialog = () => {
+    setProfileDialogOpen(false);
+  };
+
+  // Toggle judging criteria visibility
+  const toggleCriteria = () => {
+    setShowCriteria(!showCriteria);
+  };
+
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ 
+        mb: 4, 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center'
+      }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>
           Judge Dashboard
         </Typography>
-        <Divider />
+        
+        {/* View Profile Button */}
+        <Button 
+          variant="contained" 
+          color="primary"
+          startIcon={<PersonIcon />}
+          onClick={handleOpenProfileDialog}
+          sx={{ 
+            borderRadius: 2,
+            boxShadow: 2,
+            '&:hover': {
+              boxShadow: 4,
+            }
+          }}
+        >
+          View Profile
+        </Button>
       </Box>
+      <Divider />
+
+      {/* Judging Criteria Section - Highlighted */}
+      <Paper 
+        elevation={4} 
+        sx={{ 
+          mt: 4,
+          mb: 4,
+          borderRadius: 2,
+          overflow: 'hidden',
+          border: `2px solid ${theme.palette.secondary.main}`,
+          boxShadow: `0 0 15px ${theme.palette.secondary.main}30`,
+          position: 'relative'
+        }}
+      >
+        {/* Criteria Header with Toggle Button */}
+        <Box 
+          sx={{ 
+            p: 2, 
+            bgcolor: theme.palette.secondary.main + '20',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}
+          onClick={toggleCriteria}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <GavelIcon sx={{ mr: 1, color: theme.palette.secondary.main }} />
+            <Typography variant="h6" fontWeight="bold" color="secondary">
+              Judging Criteria Guidelines
+            </Typography>
+          </Box>
+          
+          <IconButton color="secondary" size="small">
+            {showCriteria ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        </Box>
+        
+        {/* Collapsible Criteria Content */}
+        <Collapse in={showCriteria}>
+          <Box sx={{ 
+            maxHeight: '800px', 
+            overflowY: 'auto',
+            pb: 2
+          }}>
+            <JudgingCriteria />
+          </Box>
+        </Collapse>
+      </Paper>
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -353,6 +455,53 @@ const JudgeDashboard = () => {
         roundId={selectedRound}
         onSubmit={handleFormSubmit}
       />
+
+      {/* Profile Dialog */}
+      <Dialog 
+        fullScreen={isMobile}
+        maxWidth="md"
+        open={profileDialogOpen} 
+        onClose={handleCloseProfileDialog}
+        scroll="paper"
+      >
+        {isMobile ? (
+          <AppBar sx={{ position: 'relative' }}>
+            <Toolbar>
+              <IconButton
+                edge="start"
+                color="inherit"
+                onClick={handleCloseProfileDialog}
+                aria-label="close"
+              >
+                <CloseIcon />
+              </IconButton>
+              <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+                Judge Profile
+              </Typography>
+            </Toolbar>
+          </AppBar>
+        ) : (
+          <DialogTitle sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            borderBottom: `1px solid ${theme.palette.divider}`
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <PersonIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+              <Typography variant="h5" component="span">
+                Judge Profile
+              </Typography>
+            </Box>
+            <IconButton onClick={handleCloseProfileDialog} aria-label="close">
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+        )}
+        <DialogContent dividers sx={{ p: 0 }}>
+          <JudgeProfile />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

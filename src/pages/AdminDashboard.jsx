@@ -97,6 +97,9 @@ const AdminDashboard = () => {
   };  
   const navigateToJudgeApproval = () => {
     navigate("/admin/judgeManagement");
+  };  
+  const navigateToJudgingCriteria= () => {
+    navigate("/judging-criteria");
   };
   const cardData = [
     {
@@ -140,7 +143,13 @@ const AdminDashboard = () => {
       subtitle: "Manage resource links",
       icon: LinkIcon,
       onClick: navigateToImportantLinks,
-    },
+    },   
+     {
+      title: "Hackathon Judging Criteria",
+      subtitle: "",
+      icon: GavelIcon,
+      onClick: navigateToJudgingCriteria,
+    }
   ];
 
   let gridCols;

@@ -66,14 +66,24 @@ const theme = createTheme({
   },
 });
 
-const roles = ["Admin", "Coordinator", "Faculty"];
+
 
 const RegisterUser = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, status, message } = useSelector(
     (state) => state.register
+  );  
+  
+  const { user} = useSelector(
+    (state) => state.auth
   );
+  let roles;
+  if (user.role === "admin") {
+    roles = ["Admin", "Coordinator", "Faculty", "Volunteer"];
+  } else {
+    roles = ["Faculty", "Volunteer"];
+  }
   const [form, setForm] = useState({
     name: "",
     email: "",

@@ -22,6 +22,7 @@ const ProblemStatementUpload = lazy(() =>
   import("./pages/ProblemStatementUpload")
 );
 const CoordinatorDashboard = lazy(() => import("./pages/CoordinatorDashboard"));
+const VolunteerDashboard = lazy(() => import("./pages/VolunteerDashboard"));
 const FacultyDashboard = lazy(() => import("./pages/FacultyDashboard"));
 const AdminTeamsPage = lazy(() => import("./pages/AdminTeamsPage"));
 const AdminAccessManagement = lazy(() =>
@@ -69,6 +70,13 @@ const App = () => {
                 <AdminDashboard />
               </ProtectedRoute>
             }
+          />{" "}          <Route
+            path="/volunteer/dashboard"
+            element={
+              <ProtectedRoute roles={["volunteer"]}>
+                <VolunteerDashboard />
+              </ProtectedRoute>
+            }
           />{" "}
           <Route
             path="/admin/judgeManagement"
@@ -89,7 +97,7 @@ const App = () => {
           <Route
             path="/admin/register"
             element={
-              <ProtectedRoute roles={["admin"]}>
+              <ProtectedRoute roles={["admin", "coordinator"]}>
                 <RegisterUser />
               </ProtectedRoute>
             }

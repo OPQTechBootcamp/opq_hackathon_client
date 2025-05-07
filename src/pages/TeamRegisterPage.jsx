@@ -92,7 +92,7 @@ const TeamRegisterPage = () => {
         confirmPassword: ''
     });
     const loading = useSelector((state) => state.team.loading); 
-    const sectionOptions = Array.from({ length: 8 }, (_, i) => String.fromCharCode(65 + i));
+    const sectionOptions = Array.from({ length: 10 }, (_, i) => String.fromCharCode(65 + i));
     const sectionNumberOptions = Array.from({ length: 30 }, (_, i) => i + 1);
 
     const handleChange = (e) => {
@@ -318,7 +318,7 @@ const TeamRegisterPage = () => {
 
                         {/* Section Number Dropdown */}
                         <FormControl fullWidth margin="normal">
-                            <InputLabel id="section-number-label">Series ID</InputLabel>
+                            <InputLabel id="section-number-label">Team Code ID</InputLabel>
                             <Select
                                 labelId="section-number-label"
                                 id="section_number"

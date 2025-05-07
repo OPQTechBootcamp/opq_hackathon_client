@@ -76,6 +76,15 @@ const Navbar = () => {
     handleUserMenuClose();
   };
 
+  const navigateToDashboard = () => {
+    if (user?.role) {
+      navigate(`/${user.role}/dashboard`);
+    } else if (teamAuth.token && teamAuth.team) {
+      navigate("/teamDashboard");
+    }
+    handleUserMenuClose();
+  };
+
   const mobileMenuId = "primary-search-account-menu-mobile";
   const renderMobileMenu = (
     <Menu
@@ -153,7 +162,7 @@ const Navbar = () => {
             </MenuItem>
           )}
 
-          {user.role === "admin" && (
+          {(user.role === "admin" || user.role === "coordinator" ) && (
             <>
               <MenuItem
                 onClick={() => {
@@ -298,17 +307,12 @@ const Navbar = () => {
             </Box>
           </MenuItem>
           <Divider />
+          <MenuItem onClick={navigateToDashboard}>
+            <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />
+            Dashboard
+          </MenuItem>
           {user.role === "admin" && (
             <>
-              <MenuItem
-                onClick={() => {
-                  handleUserMenuClose();
-                  navigate("/admin/dashboard");
-                }}
-              >
-                <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />
-                Dashboard
-              </MenuItem>
               <MenuItem
                 onClick={() => {
                   handleUserMenuClose();
@@ -328,12 +332,7 @@ const Navbar = () => {
         </>
       ) : (
         <>
-          <MenuItem
-            onClick={() => {
-              handleUserMenuClose();
-              navigate("/teamDashboard");
-            }}
-          >
+          <MenuItem onClick={navigateToDashboard}>
             <DashboardIcon sx={{ mr: 1, fontSize: 20 }} />
             Dashboard
           </MenuItem>
@@ -412,6 +411,22 @@ const Navbar = () => {
               >
                 Important Links
               </Button>
+
+              {user || (teamAuth.token && teamAuth.team) ? (
+                <Button
+                  color="primary"
+                  variant="text"
+                  startIcon={<DashboardIcon />}
+                  onClick={navigateToDashboard}
+                  sx={{
+                    mr: 2,
+                    textTransform: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  Dashboard
+                </Button>
+              ) : null}
 
               {user ? (
                 /* User is logged in */

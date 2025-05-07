@@ -2,11 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAllUsersAndTeams } from '../features/admin/adminUsersSlice';
+import apiInstance from "../utils/apiInstance";
+import { getToken } from "../utils/tokenUtils";
 import {
     Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, Paper, CircularProgress, styled, Box, Toolbar,
     AppBar, IconButton, Tooltip, Tabs, Tab, InputBase, alpha, Divider,
-    useMediaQuery, useTheme
+    useMediaQuery, useTheme, Button, Dialog, DialogActions, DialogContent,
+    DialogContentText, DialogTitle, TextField, Snackbar, Alert
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
@@ -15,6 +18,7 @@ import JudgeIcon from '@mui/icons-material/Gavel';
 import CoordinatorIcon from '@mui/icons-material/SupervisorAccount';
 import AllUsersIcon from '@mui/icons-material/People';
 import GroupsIcon from '@mui/icons-material/Groups';
+import LockResetIcon from '@mui/icons-material/LockReset';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     fontWeight: 'bold',
@@ -97,6 +101,15 @@ const AdminUsersScreen = () => {
     const [userTabValue, setUserTabValue] = useState(0);
     const [teamTabValue, setTeamTabValue] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const [openResetDialog, setOpenResetDialog] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [snackbar, setSnackbar] = useState({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -119,6 +132,72 @@ const AdminUsersScreen = () => {
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value.toLowerCase());
+    };
+
+    const handleOpenResetDialog = (item, type) => {
+        setSelectedItem({ ...item, type });
+        setNewPassword('');
+        setConfirmPassword('');
+        setOpenResetDialog(true);
+    };
+
+    const handleCloseResetDialog = () => {
+        setOpenResetDialog(false);
+        setSelectedItem(null);
+    };
+
+    const handleResetPassword = async () => {
+        if (newPassword !== confirmPassword) {
+            setSnackbar({
+                open: true,
+                message: 'Passwords do not match',
+                severity: 'error'
+            });
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            setSnackbar({
+                open: true,
+                message: 'Password must be at least 6 characters',
+                severity: 'error'
+            });
+            return;
+        }
+
+        try {
+            const authHeader = () => ({
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+
+            await apiInstance.post(
+                "/reset-password",
+                {
+                    type: selectedItem.type,
+                    id: selectedItem.id,
+                    newPassword: newPassword
+                },
+                authHeader()
+            );
+
+            setSnackbar({
+                open: true,
+                message: 'Password reset successful',
+                severity: 'success'
+            });
+            handleCloseResetDialog();
+        } catch (error) {
+            console.error('Error resetting password:', error);
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.error || 'Password reset failed',
+                severity: 'error'
+            });
+        }
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
     };
 
     // Build tab configuration based on role
@@ -232,20 +311,36 @@ const AdminUsersScreen = () => {
                                                 <StyledTableCell>Name</StyledTableCell>
                                                 <StyledTableCell>Email</StyledTableCell>
                                                 <StyledTableCell>Role</StyledTableCell>
+                                                {user.role === 'admin' && (
+                                                    <StyledTableCell align="right">Actions</StyledTableCell>
+                                                )}
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {filteredUsers.map(user => (
-                                                <StyledTableRow key={user.id}>
-                                                    <TableCell>{user.id}</TableCell>
-                                                    <TableCell>{user.name}</TableCell>
-                                                    <TableCell>{user.email}</TableCell>
-                                                    <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
+                                            {filteredUsers.map(userItem => (
+                                                <StyledTableRow key={userItem.id}>
+                                                    <TableCell>{userItem.id}</TableCell>
+                                                    <TableCell>{userItem.name}</TableCell>
+                                                    <TableCell>{userItem.email}</TableCell>
+                                                    <TableCell sx={{ textTransform: 'capitalize' }}>{userItem.role}</TableCell>
+                                                    <TableCell align="right">
+                                                        {user.role === 'admin' && (
+                                                            <Tooltip title="Reset Password">
+                                                                <IconButton 
+                                                                    size="small" 
+                                                                    color="primary"
+                                                                    onClick={() => handleOpenResetDialog(userItem, 'user')}
+                                                                >
+                                                                    <LockResetIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                    </TableCell>
                                                 </StyledTableRow>
                                             ))}
                                             {filteredUsers.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                                                    <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
                                                         No {tab.label.toLowerCase()} found
                                                     </TableCell>
                                                 </TableRow>
@@ -297,6 +392,9 @@ const AdminUsersScreen = () => {
                                                 <StyledTableCell>Team Name</StyledTableCell>
                                                 <StyledTableCell>Series</StyledTableCell>
                                                 <StyledTableCell>Team Code</StyledTableCell>
+                                                {user.role === 'admin' && (
+                                                    <StyledTableCell align="right">Actions</StyledTableCell>
+                                                )}
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -306,11 +404,24 @@ const AdminUsersScreen = () => {
                                                     <TableCell>{team.team_name}</TableCell>
                                                     <TableCell>{team.section}</TableCell>
                                                     <TableCell>{team.section_team_id}</TableCell>
+                                                    <TableCell align="right">
+                                                        {user.role === 'admin' && (
+                                                            <Tooltip title="Reset Password">
+                                                                <IconButton 
+                                                                    size="small" 
+                                                                    color="primary"
+                                                                    onClick={() => handleOpenResetDialog(team, 'team')}
+                                                                >
+                                                                    <LockResetIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                    </TableCell>
                                                 </StyledTableRow>
                                             ))}
                                             {filteredTeams.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                                                    <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
                                                         No teams found
                                                     </TableCell>
                                                 </TableRow>
@@ -323,6 +434,66 @@ const AdminUsersScreen = () => {
                     </TabPanel>
                 ))}
             </Box>
+
+            {/* Password Reset Dialog */}
+            <Dialog open={openResetDialog} onClose={handleCloseResetDialog}>
+                <DialogTitle>
+                    Reset Password for {selectedItem?.type === 'user' ? 'User' : 'Team'}: {selectedItem?.name || selectedItem?.team_name}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        Enter a new password for this {selectedItem?.type === 'user' ? 'user' : 'team'}.
+                    </DialogContentText>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        label="New Password"
+                        type="password"
+                        fullWidth
+                        variant="outlined"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        sx={{ mb: 2 }}
+                    />
+                    <TextField
+                        margin="dense"
+                        label="Confirm Password"
+                        type="password"
+                        fullWidth
+                        variant="outlined"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseResetDialog}>Cancel</Button>
+                    <Button 
+                        onClick={handleResetPassword} 
+                        variant="contained" 
+                        color="primary"
+                        disabled={!newPassword || !confirmPassword}
+                    >
+                        Reset Password
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar for notifications */}
+            <Snackbar 
+                open={snackbar.open} 
+                autoHideDuration={6000} 
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert 
+                    onClose={handleCloseSnackbar} 
+                    severity={snackbar.severity} 
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

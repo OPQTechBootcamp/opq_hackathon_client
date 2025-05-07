@@ -350,13 +350,13 @@ const shouldDisableJudge = (judgeId) => {
             <InputLabel>Select Group</InputLabel>
             <Select
               value={selectedGroup}
-              label="Select Group"
+              label="Select Series"
               onChange={handleGroupChange}
               size={isMobile ? "small" : "medium"}
             >
               {groups.map((group) => (
                 <MenuItem key={group} value={group}>
-                  Group {group}
+                  Series {group}
                 </MenuItem>
               ))}
             </Select>

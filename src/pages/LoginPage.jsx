@@ -77,7 +77,7 @@ const LoginPage = () => {
             setShowSuccess(true);
             const timer = setTimeout(() => {
                 navigate(`/${user?.role}/dashboard`);
-            }, 3000);
+            }, 1000);
             return () => clearTimeout(timer);
         }
     }, [status, message, navigate, user]);

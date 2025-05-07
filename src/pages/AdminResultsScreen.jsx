@@ -153,29 +153,7 @@ const AdminResultsScreen = () => {
     return theme.palette.error.main;
   };
 
-  // Helper function to get rating label based on score
-  const getRatingLabel = (rating) => {
-    if (!rating || rating === "NA") return "";
-    const numRating = parseFloat(rating);
-    if (numRating >= 70) return 'Outstanding';
-    if (numRating >= 60) return 'Excellent';
-    if (numRating >= 55) return 'Very Good';
-    if (numRating >= 50) return 'Good';
-    if (numRating >= 45) return 'Average';
-    if (numRating >= 40) return 'Fair';
-    if (numRating >= 35) return 'Poor';
-    return 'Needs Improvement';
-  };
 
-  // Helper function to get chip color based on rating
-  const getRatingChipColor = (rating) => {
-    if (!rating || rating === "NA") return "default";
-    const numRating = parseFloat(rating);
-    if (numRating >= 8) return 'success';
-    if (numRating >= 6) return 'primary';
-    if (numRating >= 4) return 'warning';
-    return 'error';
-  };
 
   // Filter and sort teams
   const getFilteredAndSortedTeams = () => {
@@ -237,7 +215,6 @@ const AdminResultsScreen = () => {
           'Team Name': team.team_name,
           'Problem Statement': team.problem_statement_title,
           'Rating': getDisplayRating(team.average_rating),
-          'Rating Label': getRatingLabel(team.average_rating),
           'Rounds Evaluated': rounds,
           'Judges': judges
         };
@@ -293,7 +270,6 @@ const AdminResultsScreen = () => {
           'Round': `R${evalItem.round_number}`,
           'Judge': evalItem.judge_name,
           'Total Score': evalItem.total_score,
-          'Rating': getRatingLabel(evalItem.total_score),
           'Innovation': evalItem.innovation,
           'Technical': evalItem.technical,
           'Relevance': evalItem.relevance,
@@ -583,14 +559,7 @@ const AdminResultsScreen = () => {
                               <StarIcon sx={{ fontSize: 16, ml: 0.5, color: getRatingColor(team.average_rating) }} />
                             )}
                           </Typography>
-                          {team.average_rating && parseFloat(team.average_rating) > 0 && (
-                            <Chip 
-                              label={getRatingLabel(team.average_rating)} 
-                              size="small"
-                              color={getRatingChipColor(team.average_rating)}
-                              sx={{ mt: 0.5, fontSize: '0.7rem' }}
-                            />
-                          )}
+
                         </Box>
                       </StyledRegularCell>
                       <StyledRegularCell align="center">
@@ -750,12 +719,7 @@ const AdminResultsScreen = () => {
                             >
                               {evalItem.total_score} / 75
                             </Typography>
-                            <Chip 
-                              label={getRatingLabel(evalItem.total_score)} 
-                              size="small"
-                              color={getRatingChipColor(evalItem.total_score)}
-                              sx={{ mt: 0.5, fontSize: '0.7rem' }}
-                            />
+
                           </Box>
                         </StyledRegularCell>
                         <StyledRegularCell>{evalItem.innovation}</StyledRegularCell>

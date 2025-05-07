@@ -62,7 +62,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
   textAlign: "center",
 }));
 
-const FacultyDashboard = () => {
+const VolunteerDashboard = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down("sm"));
@@ -141,7 +141,7 @@ const FacultyDashboard = () => {
   return (
     <StyledContainer maxWidth="lg">
       <StyledTypography variant="h4" component="h1" gutterBottom>
-        Faculty Dashboard
+      Volunteer Dashboard
       </StyledTypography>
 
       <Grid container spacing={4}>
@@ -185,4 +185,4 @@ const FacultyDashboard = () => {
   );
 };
 
-export default FacultyDashboard;
+export default VolunteerDashboard;

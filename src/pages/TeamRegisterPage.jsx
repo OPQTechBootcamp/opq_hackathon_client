@@ -324,7 +324,7 @@ const TeamRegisterPage = () => {
                                 id="section_number"
                                 name="section_number"
                                 value={form.section_number}
-                                label="Series ID"
+                                label="Team Code ID"
                                 onChange={handleChange}
                                 required
                             >

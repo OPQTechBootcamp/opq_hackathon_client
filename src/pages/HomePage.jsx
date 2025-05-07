@@ -12,6 +12,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { fetchTimeRemaining, updateTimer } from '../features/timerSlice'; 
+import CBC from "../assets/CBC Event Schedule.pdf"
 
 // Enhanced Custom Theme
 const theme = createTheme({
@@ -249,7 +250,39 @@ const HomePage = () => {
             ].filter(button => button.show),
         },
     ];
-
+    const renderEventScheduleSection = () => {
+        return (
+          <Container maxWidth="lg" sx={{ py: 1 }}>
+            <Box sx={{ 
+              mb: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'flex-end',
+              textAlign: 'right'
+            }}>
+              <Typography variant="h5" gutterBottom>
+                Event Schedule
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                startIcon={<AccessTimeIcon />}
+                onClick={() => window.open(CBC, '_blank')}
+                sx={{
+                  boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 8px 15px -3px rgba(37, 99, 235, 0.4)',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                Download Event Schedule PDF
+              </Button>
+            </Box>
+          </Container>
+        );
+      };
     // Render the countdown timer component
     const renderCountdownTimer = () => {
         // Always show the timer, regardless of hackathon status
@@ -362,12 +395,12 @@ const HomePage = () => {
                 minHeight: '100vh',
                 overflowX: 'hidden',
                 background: 'linear-gradient(180deg, rgba(219, 234, 254, 0.3) 0%, rgba(241, 245, 249, 1) 100%)'
-            }}>
+            }}>{renderEventScheduleSection()}
                 {/* Hero Section */}
                 <Box 
                     sx={{ 
                         position: 'relative',
-                        py: { xs: 10, md: 16 },
+                        py: { xs: 8, md: 4 },
                         overflow: 'hidden',
                     }}
                 >
@@ -377,7 +410,7 @@ const HomePage = () => {
                         top: -100,
                         right: -100,
                         width: 500,
-                        height: 500,
+                        height: 400,
                         borderRadius: '50%',
                         background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0) 70%)',
                         zIndex: 0
@@ -387,14 +420,14 @@ const HomePage = () => {
                         bottom: -100,
                         left: -100,
                         width: 500,
-                        height: 500,
+                        height: 400,
                         borderRadius: '50%',
                         background: 'radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0) 70%)',
                         zIndex: 0
                     }} />
                     
                     <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-                        <Box textAlign="center" mb={{ xs: 6, md: 8 }}>
+                        <Box textAlign="center" mb={{ xs: 6, md: 4 }}>
                             <Typography 
                                 variant="h3" 
                                 color="text.primary"

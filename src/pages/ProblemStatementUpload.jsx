@@ -120,15 +120,15 @@ const ProblemStatementUpload = () => {
     e.preventDefault();
     setStatusMessage(null);
 
-    if (!title || !overviewFile) {
-      setStatusMessage({ type: 'error', text: 'Title and overview file are required.' });
+    if (!title) {
+      setStatusMessage({ type: 'error', text: 'Title is required.' });
       return;
     }
 
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
-    formData.append('overview_file', overviewFile);
+    if (overviewFile) formData.append('overview_file', overviewFile);
     if (inDepthFile) formData.append('in_depth_file', inDepthFile);
 
     setLoading(true);
@@ -226,7 +226,7 @@ const ProblemStatementUpload = () => {
                   {/* Overview File Upload */}
                   <Box>
                     <Typography variant="body2" fontWeight="medium" color="text.secondary" mb={1}>
-                      Overview File (PDF, ≤ 5 MB) *
+                      Overview File (PDF, ≤ 5 MB, optional)
                     </Typography>
                     
                     <Button

@@ -352,7 +352,7 @@ const JudgeProfile = () => {
             
             <Typography variant="body1">
               <LocationOnIcon sx={{ fontSize: 18, verticalAlign: 'middle', mr: 1 }} />
-              Location: Aditya Layout, Rajarajeshwari Nagar, Bengaluru, Karnataka 560098
+              Location: Global Academy of Technology, Aditya Layout, Rajarajeshwari Nagar, Bengaluru, Karnataka 560098
             </Typography>
             
             {profile.status === 'approved' ? (

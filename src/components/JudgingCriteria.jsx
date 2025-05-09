@@ -117,7 +117,7 @@ const JudgingCriteria = () => {
                 <Box display="flex" alignItems="center">
                   <LocationOnIcon sx={{ color: theme.palette.primary.main, mr: 1 }} />
                   <Typography variant="body1" fontWeight="medium">
-                    Venue: Aditya Layout, Rajarajeshwari Nagar, Bengaluru
+                    Venue: Global Academy of Technology, Aditya Layout, Rajarajeshwari Nagar, Bengaluru
                   </Typography>
                 </Box>
               </Grid>

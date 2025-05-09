@@ -304,7 +304,7 @@ const JudgeRegistration = () => {
               <Grid item xs={12} sm={6}>
                 <Typography variant="body1" color="text.secondary">
                   <LocationOnIcon sx={{ fontSize: 18, verticalAlign: 'middle', mr: 1 }} />
-                  Location: Aditya Layout, Rajarajeshwari Nagar, Bengaluru, Karnataka 560098
+                  Location: Global Academy of Technology, Aditya Layout, Rajarajeshwari Nagar, Bengaluru, Karnataka 560098
                 </Typography>
               </Grid>
             </Grid>
